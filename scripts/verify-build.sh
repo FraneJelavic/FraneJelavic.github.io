@@ -54,6 +54,7 @@ assert_core_artifacts() {
   local required_paths=(
     "index.html"
     "writing/index.html"
+    "elsewhere/index.html"
     "about/index.html"
     "privacy/index.html"
     "404.html"
@@ -65,6 +66,17 @@ assert_core_artifacts() {
   for relative_path in "${required_paths[@]}"; do
     [[ -f "${production_dir}/${relative_path}" ]] || fail "missing generated artifact: ${relative_path}"
   done
+}
+
+assert_elsewhere_content() {
+  local production_dir="$1"
+  local elsewhere_file="${production_dir}/elsewhere/index.html"
+
+  grep -Fq 'Understanding the Database' "${elsewhere_file}" || fail "Elsewhere page is missing the DUMP Days talk"
+  grep -Fq 'E7xBu7ZdP28' "${elsewhere_file}" || fail "Elsewhere page is missing the timestamped YouTube link"
+  grep -Fq 'https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp' "${elsewhere_file}" || fail "Elsewhere page is missing the developer automation article"
+  grep -Fq 'https://shiftmag.dev/database-migration-developers-open-heart-surgery-1926/' "${elsewhere_file}" || fail "Elsewhere page is missing the database migration article"
+  grep -Fq 'href=/elsewhere/' "${production_dir}/index.html" || fail "primary navigation is missing the Elsewhere page"
 }
 
 assert_canonical_urls() {
@@ -181,6 +193,7 @@ hugo \
   || fail "nonproduction Hugo build failed"
 
 assert_core_artifacts "${production_output}"
+assert_elsewhere_content "${production_output}"
 assert_canonical_urls "${production_output}"
 assert_no_private_content "${production_output}"
 assert_empty_writing_state "${production_output}"
