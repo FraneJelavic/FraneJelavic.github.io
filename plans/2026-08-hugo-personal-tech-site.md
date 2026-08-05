@@ -530,13 +530,13 @@ Complete a final quality pass and make the writing workflow easy to repeat. This
 - Audited the deployed site at 360 px and 1440 px: semantic landmarks and one H1 are present, no horizontal overflow exists, the desktop reading column is 704 px, the homepage has no recent-writing section, and the Writing archive contains only its heading with zero posts.
 - Light-theme text/accent/muted/focus contrast ratios measured 14.93/6.15/5.45/4.68; dark-theme ratios measured 14.58/9.36/8.02/9.91. Theme selection returned to system after testing, reduced-motion and horizontal code/table scrolling remain defined in CSS, and no browser console errors occurred.
 - Verified canonical, Open Graph, Twitter card, and `WebSite` JSON-LD metadata without a default social image. Raw server-rendered HTML contains the approved copy and navigation without relying on JavaScript.
-- A final workflow dispatch exposed that the official standard Hugo binary appends a `-<commit>` suffix to `hugo version`. The exact-version gate was corrected to accept official `-commit` and `+feature` suffixes while still rejecting every other Hugo version; final CI confirmation remains pending until the correction is pushed.
-- The launch record remains [GitHub Actions run 31003814843](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31003814843), launch commit `f3f7df4cf7c951ec443f89fe9bde245d0d3afe16`, and `https://franejelavic.github.io/`. Initial articles, a custom domain, search, comments, math rendering, and code-copy controls are intentionally deferred independent enhancements; no launch-critical issue is deferred.
+- A final workflow dispatch exposed that the official standard Hugo binary appends a `-<commit>` suffix to `hugo version`. The exact-version gate now accepts official `-commit` and `+feature` suffixes while still rejecting every other Hugo version. [Validation run 31005623273](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31005623273) subsequently passed the acceptance suite, actionlint, production build, and generated-link validation on final handoff commit `a37a3ee84ab0660f0b3d9335a414f1c8fe24e853`.
+- The launch record is [deployment run 31003814843](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31003814843) for launch commit `f3f7df4cf7c951ec443f89fe9bde245d0d3afe16`. The final handoff was deployed successfully by [run 31005604534](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31005604534) at `https://franejelavic.github.io/`. Initial articles, a custom domain, search, comments, math rendering, and code-copy controls are intentionally deferred independent enhancements; no launch-critical issue is deferred.
 
 #### Automated Verification:
 - [x] `make check` passes on a clean checkout of the deployed commit.
 - [x] The deployed commit matches the `main` branch and the successful Pages artifact.
-- [ ] Static link and workflow validation pass with no ignored launch-critical failures.
+- [x] Static link and workflow validation pass with no ignored launch-critical failures.
 - [x] No untracked generated output or temporary verification content remains.
 
 #### Manual Verification:
@@ -544,7 +544,15 @@ Complete a final quality pass and make the writing workflow easy to repeat. This
 - [x] The launch site contains no published posts and no empty recent-writing section.
 - [x] GitHub, LinkedIn, RSS, and Privacy links work as intended.
 - [x] The final site feels like a writing-focused personal homepage rather than a resume or employer profile.
-- [ ] Frane accepts the deployed site and author workflow.
+- [x] Frane accepts the deployed site and author workflow.
+
+## Post-Launch Enhancements
+
+### Curated talks and articles (August 5, 2026)
+
+At Frane's explicit request after accepting the launch, added a small `/elsewhere/` page and primary-navigation link for selected talks and articles. This intentionally supersedes the v1 exclusion of a publications-style section only for this curated list; it does not add a projects section, résumé, employer profile, or exhaustive career inventory.
+
+The initial entries are the timestamped DUMP Days 2023 talk “Understanding the Database,” the Infobip Developers Hub article about the Claude/MCP developer-support system built by Luciano Peranni and Frane Jelavić, and Frane's ShiftMag article about migrating a 7 TB PostgreSQL database from AWS to an on-premises environment. Production acceptance checks require the page, navigation entry, and all three destination URLs. Responsive browser verification found no overflow at 360 or 1440 px, safe external-link attributes were present, and no console errors occurred.
 
 ## Testing Strategy
 
