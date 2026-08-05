@@ -81,6 +81,8 @@ The Mermaid bundle is self-hosted and loads only on a page that contains a Merma
 
 New posts start with `draft: true`. Use `make serve-drafts` while writing and run `make check` before publication. To publish, set `draft: false`, commit the bundle, and push `main`. The deployment workflow builds and deploys the site through GitHub Pages.
 
+Confirm publication in the repository's [Deploy Hugo site to Pages workflow](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/workflows/deploy.yml): wait for both the build and deploy jobs to pass, then open the article on the production site. If a job fails, use its first failing step together with the recovery guidance below.
+
 ## Analytics and deployment
 
 GoatCounter loads only when Hugo builds with the `production` environment. Local `make serve` and `make serve-drafts` previews never send page views. Production traffic can be reviewed at [franejelavic.goatcounter.com](https://franejelavic.goatcounter.com/).

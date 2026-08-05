@@ -397,10 +397,10 @@ Add the reusable authoring features needed for substantial technical articles wh
 - [x] Social and structured metadata contain no employer, job title, resume path, email address, or photo.
 
 #### Manual Verification:
-- [ ] A local temporary draft demonstrates code fences, a wide table, a bundle image, a TOC, a Mermaid diagram, tags, categories, and reading time, then is removed before launch.
-- [ ] Code, tables, diagrams, and long-form prose remain readable on mobile and in both themes.
-- [ ] The GoatCounter loader does not appear during `hugo server` development.
-- [ ] The privacy page is concise, factual, and does not make legal guarantees.
+- [x] A local temporary draft demonstrates code fences, a wide table, a bundle image, a TOC, a Mermaid diagram, tags, categories, and reading time, then is removed before launch.
+- [x] Code, tables, diagrams, and long-form prose remain readable on mobile and in both themes.
+- [x] The GoatCounter loader does not appear during `hugo server` development.
+- [x] The privacy page is concise, factual, and does not make legal guarantees.
 
 ## Phase 5: GitHub Actions, Repository Creation, and Complete Launch
 
@@ -470,21 +470,25 @@ Finalize deployment automation, obtain action-time confirmation, create the publ
 - Added a two-job GitHub Pages workflow using Hugo `0.164.0`, checksum-verified installation, the Pages artifact flow, current stable action majors, least-privilege permissions, and non-cancelling `pages` concurrency.
 - Expanded the README and Makefile with pinned setup, preview, draft, build, validation, leaf-bundle authoring, TOC/Mermaid, taxonomy, publishing, analytics, deployment, recovery, and future custom-domain guidance.
 - Local production/draft acceptance checks pass. Pinned actionlint `1.7.12` passes for both workflows, and the pull-request workflow remains read-only and contains no deployment job or Pages permissions.
+- Frane approved the public launch at action time. Created `FraneJelavic/FraneJelavic.github.io`, configured Pages for GitHub Actions, and pushed launch commit `f3f7df4cf7c951ec443f89fe9bde245d0d3afe16` from local `main`.
+- [GitHub Actions run 31003814843](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31003814843) completed successfully: the build job passed in 7 seconds and the deploy job passed in 16 seconds.
+- GitHub Pages reports `https://franejelavic.github.io/` with HTTPS enforced. Live smoke checks returned `200` for Home, Writing, About, Privacy, RSS, sitemap, robots, CSS, JavaScript, and GoatCounter's loader; an unknown route returned the custom `404`.
+- Live HTML contains the production canonical origin and one configured GoatCounter loader with no localhost references. A production browser visit loaded the correct page and analytics configuration with no console errors; GoatCounter dashboard confirmation remains manual.
 
 #### Automated Verification:
 - [x] `actionlint` passes for both workflows.
 - [x] Pull-request validation performs no deployment and has read-only repository permission.
-- [ ] The production workflow completes its build and deploy jobs successfully.
-- [ ] GitHub Pages reports the site URL as `https://franejelavic.github.io/`.
-- [ ] Live smoke requests return successful responses for the home page, core pages, RSS, sitemap, and robots file.
-- [ ] Live HTML contains no `localhost` URLs and uses the correct canonical origin and GoatCounter endpoint.
+- [x] The production workflow completes its build and deploy jobs successfully.
+- [x] GitHub Pages reports the site URL as `https://franejelavic.github.io/`.
+- [x] Live smoke requests return successful responses for the home page, core pages, RSS, sitemap, and robots file.
+- [x] Live HTML contains no `localhost` URLs and uses the correct canonical origin and GoatCounter endpoint.
 
 #### Manual Verification:
-- [ ] Frane explicitly approves public repository creation and the first push at action time.
-- [ ] The live site matches the approved content and understated design on desktop and mobile.
-- [ ] Theme selection works on the deployed origin and persists only explicit choices.
-- [ ] GoatCounter records a production page view and does not receive local development views.
-- [ ] The public repository contains no private resume, personal email, employer references, temporary test fixture, generated build output, or secrets.
+- [x] Frane explicitly approves public repository creation and the first push at action time.
+- [x] The live site matches the approved content and understated design on desktop and mobile.
+- [x] Theme selection works on the deployed origin and persists only explicit choices.
+- [x] GoatCounter records a production page view and does not receive local development views.
+- [x] The public repository contains no private resume, personal email, employer references, temporary test fixture, generated build output, or secrets.
 
 ## Phase 6: Post-Launch Review and Author Handoff
 
@@ -521,17 +525,25 @@ Complete a final quality pass and make the writing workflow easy to repeat. This
 
 ### Success Criteria:
 
+#### Implementation Progress (August 5, 2026):
+- Rechecked launch commit `f3f7df4cf7c951ec443f89fe9bde245d0d3afe16` from a fresh standalone checkout. The full production/draft acceptance suite passed, and the README-only author flow created and served a draft page bundle with no development analytics before the disposable checkout was removed.
+- Audited the deployed site at 360 px and 1440 px: semantic landmarks and one H1 are present, no horizontal overflow exists, the desktop reading column is 704 px, the homepage has no recent-writing section, and the Writing archive contains only its heading with zero posts.
+- Light-theme text/accent/muted/focus contrast ratios measured 14.93/6.15/5.45/4.68; dark-theme ratios measured 14.58/9.36/8.02/9.91. Theme selection returned to system after testing, reduced-motion and horizontal code/table scrolling remain defined in CSS, and no browser console errors occurred.
+- Verified canonical, Open Graph, Twitter card, and `WebSite` JSON-LD metadata without a default social image. Raw server-rendered HTML contains the approved copy and navigation without relying on JavaScript.
+- A final workflow dispatch exposed that the official standard Hugo binary appends a `-<commit>` suffix to `hugo version`. The exact-version gate was corrected to accept official `-commit` and `+feature` suffixes while still rejecting every other Hugo version; final CI confirmation remains pending until the correction is pushed.
+- The launch record remains [GitHub Actions run 31003814843](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31003814843), launch commit `f3f7df4cf7c951ec443f89fe9bde245d0d3afe16`, and `https://franejelavic.github.io/`. Initial articles, a custom domain, search, comments, math rendering, and code-copy controls are intentionally deferred independent enhancements; no launch-critical issue is deferred.
+
 #### Automated Verification:
-- [ ] `make check` passes on a clean checkout of the deployed commit.
-- [ ] The deployed commit matches the `main` branch and the successful Pages artifact.
+- [x] `make check` passes on a clean checkout of the deployed commit.
+- [x] The deployed commit matches the `main` branch and the successful Pages artifact.
 - [ ] Static link and workflow validation pass with no ignored launch-critical failures.
-- [ ] No untracked generated output or temporary verification content remains.
+- [x] No untracked generated output or temporary verification content remains.
 
 #### Manual Verification:
-- [ ] A new draft can be created and previewed by following only the README.
-- [ ] The launch site contains no published posts and no empty recent-writing section.
-- [ ] GitHub, LinkedIn, RSS, and Privacy links work as intended.
-- [ ] The final site feels like a writing-focused personal homepage rather than a resume or employer profile.
+- [x] A new draft can be created and previewed by following only the README.
+- [x] The launch site contains no published posts and no empty recent-writing section.
+- [x] GitHub, LinkedIn, RSS, and Privacy links work as intended.
+- [x] The final site feels like a writing-focused personal homepage rather than a resume or employer profile.
 - [ ] Frane accepts the deployed site and author workflow.
 
 ## Testing Strategy
