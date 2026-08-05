@@ -1,0 +1,87 @@
+name: Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  HUGO_VERSION: "0.164.0"
+  ACTIONLINT_VERSION: "1.7.12"
+  LYCHEE_VERSION: "0.24.2"
+
+jobs:
+  validate:
+    name: Validate site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+
+      - name: Install pinned validation tools
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          tools_dir="${RUNNER_TEMP}/site-tools"
+          downloads_dir="${RUNNER_TEMP}/site-tool-downloads"
+          mkdir -p "${tools_dir}" "${downloads_dir}"
+          cd "${downloads_dir}"
+
+          hugo_archive="hugo_${HUGO_VERSION}_linux-amd64.tar.gz"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${hugo_archive}"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_checksums.txt"
+          grep "  ${hugo_archive}$" "hugo_${HUGO_VERSION}_checksums.txt" | sha256sum --check --strict
+          tar -xzf "${hugo_archive}" -C "${tools_dir}" hugo
+
+          actionlint_archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${actionlint_archive}"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          grep "  ${actionlint_archive}$" "actionlint_${ACTIONLINT_VERSION}_checksums.txt" | sha256sum --check --strict
+          tar -xzf "${actionlint_archive}" -C "${tools_dir}" actionlint
+
+          lychee_archive="lychee-x86_64-unknown-linux-gnu.tar.gz"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/${lychee_archive}"
+          curl --fail --location --silent --show-error --remote-name \
+            "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/${lychee_archive}.sha256"
+          sha256sum --check --strict "${lychee_archive}.sha256"
+          tar -xzf "${lychee_archive}" -C "${tools_dir}" --strip-components=1 \
+            "lychee-x86_64-unknown-linux-gnu/lychee"
+
+          printf '%s\n' "${tools_dir}" >> "${GITHUB_PATH}"
+
+      - name: Run acceptance checks
+        run: ./scripts/verify-build.sh
+
+      - name: Lint GitHub Actions workflows
+        run: actionlint
+
+      - name: Build output for internal-link validation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          link_output="${RUNNER_TEMP}/site-link-check"
+          hugo \
+            --gc \
+            --minify \
+            --panicOnWarning \
+            --environment production \
+            --destination "${link_output}"
+          printf 'LINK_CHECK_OUTPUT=%s\n' "${link_output}" >> "${GITHUB_ENV}"
+
+      - name: Validate generated internal links
+        run: >-
+          lychee
+          --offline
+          --include-fragments
+          --root-dir "${LINK_CHECK_OUTPUT}"
+          "${LINK_CHECK_OUTPUT}/**/*.html"
