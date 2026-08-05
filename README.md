@@ -19,7 +19,7 @@ sudo installer -pkg hugo_0.164.0_darwin-universal.pkg -target /
 hugo version
 ```
 
-The last command must report `v0.164.0`. Other platforms can use the matching standard archive from the same release and verify it against the published checksum file.
+The last command must report `v0.164.0`. The local version gate also accepts official build suffixes after that exact version, such as a `-<commit>` suffix or `+extended+withdeploy`; it rejects every other Hugo version. Other platforms can use the matching standard archive from the same release and verify it against the published checksum file.
 
 ## Local workflow
 
@@ -42,6 +42,10 @@ Run the same production and draft acceptance checks used in CI:
 ```sh
 make check
 ```
+
+`make check` first enforces repository hygiene for tracked generated output, lock and credential files, private paths, contact addresses, employment-profile language, and misplaced validation fixtures. It then verifies real production/draft/development builds plus fixed-clock zero-post and populated scenarios, technical-writing features, visibility controls, archetype defaults, canonical URLs, and environment-specific analytics. Scenario content stays under `testdata/` and temporary build directories; it is never published.
+
+CI adds workflow linting with pinned `actionlint` and an offline, fragment-aware generated-link check with pinned `lychee`. Hugo, actionlint, and lychee are installed only in the runner's temporary directory from checksum-verified release archives.
 
 Build the production site into `public/` or include drafts in a local production-mode build:
 
@@ -79,23 +83,26 @@ flowchart LR
 
 The Mermaid bundle is self-hosted and loads only on a page that contains a Mermaid fence.
 
-New posts start with `draft: true`. Use `make serve-drafts` while writing and run `make check` before publication. To publish, set `draft: false`, commit the bundle, and push `main`. The deployment workflow builds and deploys the site through GitHub Pages.
+New posts start with `draft: true`. Use `make serve-drafts` while writing and run `make check` before publication. To publish, set `draft: false`, commit the bundle, and preferably open a pull request so validation completes before merging to `main`. A deliberate direct push to `main` still runs the same acceptance, workflow, and offline-link validation before any Pages artifact can be built or uploaded.
 
-Confirm publication in the repository's [Deploy Hugo site to Pages workflow](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/workflows/deploy.yml): wait for both the build and deploy jobs to pass, then open the article on the production site. If a job fails, use its first failing step together with the recovery guidance below.
+Confirm publication in the repository's [Deploy Hugo site to Pages workflow](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/workflows/deploy.yml): wait for validation, build, and deployment to pass, then open the article on the production site. If a job fails, use its first failing step together with the recovery guidance below.
 
 ## Analytics and deployment
 
 GoatCounter loads only when Hugo builds with the `production` environment. Local `make serve` and `make serve-drafts` previews never send page views. Production traffic can be reviewed at [franejelavic.goatcounter.com](https://franejelavic.goatcounter.com/).
 
-Pull requests run `.github/workflows/check.yml`, which validates the site without deployment. Pushes to `main` run `.github/workflows/deploy.yml`, which builds once and deploys the resulting Pages artifact. GitHub Pages uses the Actions source; there is no `gh-pages` branch.
+Pull requests run `.github/workflows/check.yml` with read-only repository permission and no deployment steps. Pushes to `main` run `.github/workflows/deploy.yml`, whose read-only validation job must pass before the separately permissioned Pages build can upload an artifact; deployment remains a third job. Manual deployment fails immediately unless it targets `main`. GitHub Pages uses the Actions source; there is no `gh-pages` branch.
 
 ### Common recovery steps
 
 - If a check reports the wrong Hugo version, install `0.164.0` and confirm with `hugo version`.
+- If repository policy fails, use the reported path and contract to remove generated output, private/contact data, credential material, or misplaced fixtures; the check does not inspect or rewrite Git history.
+- If a deterministic fixture check fails, use the reported scenario, generated page, and contract. Keep fixtures under `testdata/verify-build/` and do not copy them into `content/`.
 - If Hugo reports a warning, fix the reported content or template issue; warnings intentionally fail checks and deployment.
 - If a draft is missing from preview, use `make serve-drafts` and confirm its front matter contains `draft: true`.
 - If generated output looks stale, stop the server, remove the ignored `public/` directory, and rerun the relevant command.
-- If deployment fails, open the failed GitHub Actions run, fix the first build or deploy error, run `make check`, and push the correction.
+- If workflow linting or offline link validation fails, fix the reported workflow, route, asset, feed, or fragment and rerun `make check` before pushing.
+- If deployment fails, open the failed GitHub Actions run and identify whether validation, Pages build, or deployment failed; fix the first failing step, run `make check`, and push the correction.
 - If GoatCounter is absent locally, no recovery is needed; analytics is intentionally production-only.
 
 ## Future changes

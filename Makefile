@@ -5,6 +5,7 @@ SERVER_FLAGS := --panicOnWarning --disableFastRender
 .PHONY: check build build-drafts serve serve-drafts new
 
 check:
+	./scripts/verify-repository.sh
 	./scripts/verify-build.sh
 
 build:

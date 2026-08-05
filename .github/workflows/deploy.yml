@@ -6,10 +6,7 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages
@@ -21,34 +18,77 @@ defaults:
 
 env:
   HUGO_VERSION: "0.164.0"
+  ACTIONLINT_VERSION: "1.7.12"
+  LYCHEE_VERSION: "0.24.2"
 
 jobs:
+  validate:
+    name: Validate site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Require main ref
+        env:
+          DEPLOYMENT_REF: ${{ github.ref }}
+        run: |
+          if [[ "${DEPLOYMENT_REF}" != "refs/heads/main" ]]; then
+            printf 'Deployment validation requires refs/heads/main; received %s\n' "${DEPLOYMENT_REF}" >&2
+            exit 1
+          fi
+
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+
+      - name: Install pinned validation tools
+        run: ./scripts/install-ci-tools.sh
+
+      - name: Run acceptance checks
+        run: make check
+
+      - name: Lint GitHub Actions workflows
+        run: actionlint .github/workflows/check.yml .github/workflows/deploy.yml
+
+      - name: Build output for internal-link validation
+        run: |
+          set -Eeuo pipefail
+          link_output="${RUNNER_TEMP}/site-link-check"
+          hugo \
+            --gc \
+            --minify \
+            --panicOnWarning \
+            --environment production \
+            --noBuildLock \
+            --cacheDir "${RUNNER_TEMP}/hugo-cache-link-check" \
+            --destination "${link_output}"
+          printf 'LINK_CHECK_OUTPUT=%s\n' "${link_output}" >> "${GITHUB_ENV}"
+
+      - name: Validate generated internal links
+        run: >-
+          lychee
+          --offline
+          --include-fragments
+          --root-dir "${LINK_CHECK_OUTPUT}"
+          "${LINK_CHECK_OUTPUT}/**/*.html"
+
   build:
     name: Build site
     runs-on: ubuntu-24.04
+    needs: validate
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
 
-      - name: Install pinned Hugo
-        run: |
-          set -Eeuo pipefail
-
-          downloads_dir="${RUNNER_TEMP}/hugo-download"
-          install_dir="${RUNNER_TEMP}/hugo-bin"
-          archive="hugo_${HUGO_VERSION}_linux-amd64.tar.gz"
-          mkdir -p "${downloads_dir}" "${install_dir}"
-          cd "${downloads_dir}"
-
-          curl --fail --location --silent --show-error --remote-name \
-            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${archive}"
-          curl --fail --location --silent --show-error --remote-name \
-            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_checksums.txt"
-          grep "  ${archive}$" "hugo_${HUGO_VERSION}_checksums.txt" | sha256sum --check --strict
-          tar -xzf "${archive}" -C "${install_dir}" hugo
-          printf '%s\n' "${install_dir}" >> "${GITHUB_PATH}"
+      - name: Install pinned validation tools
+        run: ./scripts/install-ci-tools.sh
 
       - name: Configure GitHub Pages
         id: pages
@@ -76,6 +116,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build
     timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

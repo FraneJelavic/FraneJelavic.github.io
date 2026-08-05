@@ -8,7 +8,9 @@ The site is primarily a place for Frane to publish writing. Its presentation sho
 
 The implementation includes the complete launch: creating the local repository, creating the public `FraneJelavic/FraneJelavic.github.io` GitHub repository, pushing `main`, enabling GitHub Pages through GitHub Actions, and verifying the live site and analytics. This plan does not require application-level TDD; the tests phase defines static-site build and acceptance checks before implementation.
 
-## Current State Analysis
+## Pre-Implementation Baseline (August 5, 2026)
+
+This opening state is a historical pre-implementation baseline, not a description of the repository after launch. Later implementation notes and post-launch records describe the state that superseded it.
 
 - No local `FraneJelavic.github.io` repository exists under `/Users/fjelavic/git`.
 - No `FraneJelavic.github.io` repository exists on the public GitHub profile as of August 5, 2026.
@@ -59,7 +61,7 @@ A public, responsive, accessible personal site is available at `https://franejel
 
 ## What We're NOT Doing
 
-- No employer names, employment history, job title, resume, career timeline, location, or skills inventory.
+- No employment biography, employment history, job title, resume, career timeline, location, or skills inventory. Publisher names may appear only as contextual attribution in curated links.
 - No profile photo, gallery, logo, or hero illustration.
 - No email address or contact form.
 - No Projects or Publications sections.
@@ -72,6 +74,13 @@ A public, responsive, accessible personal site is available at `https://franejel
 - No math-rendering dependency in v1; it can be added later if an article needs it.
 - No broad claim that GoatCounter or the overall site is automatically GDPR compliant.
 - No TDD or application unit-test suite. Verification is based on Hugo builds, output checks, workflow linting, link validation, accessibility review, and live smoke testing.
+
+## Content and Metadata Privacy Boundary (August 5, 2026 Follow-Up)
+
+- `Infobip Developers Hub` is approved publisher attribution in the curated talks-and-articles list; it is not employment biography.
+- Site content remains prohibited from including `works at`, `worked at`, `working at`, `my employer`, job titles, work-experience sections, employment timelines, resume content, contact email addresses, private paths, or profile images.
+- Generated-site and source validation covers the working tree and rendered artifacts. It does not prove that historical Git metadata is email-free.
+- Published history will not be amended, rewritten, or force-pushed to remove existing author metadata. Future commits use the repository-local GitHub private/noreply address.
 
 ## Implementation Approach
 
@@ -140,7 +149,7 @@ Reconfirm the implementation environment and freeze the already-agreed scope bef
 #### Manual Verification:
 - [x] The agreed product decisions in this plan still match the intended launch.
 - [x] Frane can sign in to the `franejelavic` GoatCounter dashboard.
-- [x] No resume content, employer information, photo, email address, or unapproved biography text is included in scope.
+- [x] No resume content, employment-profile information, photo, email address, or unapproved biography text is included in scope; contextual publisher attribution is allowed.
 
 ## Phase 2: Validation Contracts and Acceptance Checks
 
@@ -159,7 +168,7 @@ Define repeatable static-site checks before implementing the templates. This is 
 - Run a separate draft-inclusive render with `--buildDrafts --renderToMemory --panicOnWarning` so unpublished work cannot silently break future builds.
 - Assert the production output contains `index.html`, `writing/index.html`, `about/index.html`, `privacy/index.html`, `404.html`, `sitemap.xml`, and the home RSS feed.
 - Assert generated canonical URLs use `https://franejelavic.github.io/` and contain no `localhost` URLs.
-- Assert pages contain no employer names, private resume path, email address, or profile-image markup.
+- Assert pages contain no employment-profile language, private resume path, email address, or profile-image markup while allowing contextual publisher attribution.
 - Assert the homepage does not render a recent-writing heading when no published posts exist.
 - Assert each generated HTML page includes no more than one GoatCounter loader, with the expected production endpoint.
 - Provide clear error messages and exit nonzero on any failed assertion.
@@ -234,7 +243,7 @@ Create the Hugo project, core content, original layouts, and responsive design. 
 - `content/privacy.md`
 
 **Changes**:
-- Add the exact approved homepage introduction with no job title, employer, topic cards, photo, or extra biography.
+- Add the exact approved homepage introduction with no job title, employment-profile language, topic cards, photo, or extra biography.
 - Add a title-only Writing section with no placeholder article or empty-state promise.
 - Add the exact approved employer-neutral About paragraph.
 - Add GitHub and LinkedIn links through site configuration or front matter, not duplicated hard-coded markup.
@@ -394,7 +403,7 @@ Add the reusable authoring features needed for substantial technical articles wh
 - [x] Production output contains the correct GoatCounter endpoint once per page and nonproduction output contains no GoatCounter script.
 - [x] An opt-in fixture used only during verification proves TOC and Mermaid markup render correctly without becoming published site content.
 - [x] Link checking passes for internal pages, images, feeds, taxonomy links, and heading anchors.
-- [x] Social and structured metadata contain no employer, job title, resume path, email address, or photo.
+- [x] Social and structured metadata contain no employment-profile language, job title, resume path, email address, or photo.
 
 #### Manual Verification:
 - [x] A local temporary draft demonstrates code fences, a wide table, a bundle image, a TOC, a Mermaid diagram, tags, categories, and reading time, then is removed before launch.
@@ -488,7 +497,7 @@ Finalize deployment automation, obtain action-time confirmation, create the publ
 - [x] The live site matches the approved content and understated design on desktop and mobile.
 - [x] Theme selection works on the deployed origin and persists only explicit choices.
 - [x] GoatCounter records a production page view and does not receive local development views.
-- [x] The public repository contains no private resume, personal email, employer references, temporary test fixture, generated build output, or secrets.
+- [x] The public repository contains no private resume, personal email, employment-profile content, temporary test fixture, generated build output, or secrets; later contextual publisher attribution is explicitly allowed.
 
 ## Phase 6: Post-Launch Review and Author Handoff
 
@@ -570,7 +579,7 @@ This static site does not need application unit tests or TDD. Verification shoul
 
 3. **Artifact assertions**
    - Core pages, 404, RSS, sitemap, and robots exist.
-   - No `localhost`, private resume path, email address, employer name, profile image, or placeholder post leaks into output.
+   - No `localhost`, private resume path, email address, employment-profile language, profile image, or placeholder post leaks into output; contextual publisher attribution is allowed.
    - Recent writing is absent when there are no posts.
    - GoatCounter is absent outside production and appears at most once per production page.
 
