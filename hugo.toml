@@ -1,0 +1,73 @@
+baseURL = "https://franejelavic.github.io/"
+title = "Frane Jelavic"
+defaultContentLanguage = "en"
+timeZone = "Europe/Zagreb"
+enableRobotsTXT = true
+summaryLength = 30
+
+[pagination]
+  pagerSize = 10
+
+[languages]
+  [languages.en]
+    contentDir = "content"
+    direction = "ltr"
+    label = "English"
+    locale = "en-US"
+    weight = 1
+
+[params]
+  author = "Frane Jelavic"
+  description = "Hi, I’m Frane. I use this site to write down and share things I learn while working with PostgreSQL, Debezium, distributed systems, and performance problems."
+  goatCounterEndpoint = "https://franejelavic.goatcounter.com/count"
+
+  [params.links]
+    github = "https://github.com/FraneJelavic"
+    linkedin = "https://www.linkedin.com/in/frane-jelavi%C4%87-92551660/"
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML", "RSS"]
+  taxonomy = ["HTML", "RSS"]
+  term = ["HTML", "RSS"]
+
+[sitemap]
+  changeFreq = "weekly"
+  filename = "sitemap.xml"
+  priority = 0.5
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = false
+
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = false
+    lineNos = false
+    noClasses = false
+      tabWidth = 4
+
+  [markup.tableOfContents]
+    endLevel = 3
+    ordered = false
+    startLevel = 2
+
+[[menus.main]]
+  name = "Home"
+  pageRef = "/"
+  weight = 10
+
+[[menus.main]]
+  name = "Writing"
+  pageRef = "/writing"
+  weight = 20
+
+[[menus.main]]
+  name = "About"
+  pageRef = "/about"
+  weight = 30

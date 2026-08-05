@@ -1,0 +1,19 @@
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="site-title" href="{{ site.Home.RelPermalink }}">{{ site.Title }}</a>
+    <div class="site-header__controls">
+      <nav class="primary-nav" aria-label="Primary">
+        <ul>
+          {{ $currentPage := . }}
+          {{ range site.Menus.main }}
+            {{ $isActive := or ($currentPage.IsMenuCurrent .Menu .) ($currentPage.HasMenuCurrent .Menu .) }}
+            <li>
+              <a href="{{ .URL }}"{{ if $isActive }} aria-current="page"{{ end }}>{{ .Name }}</a>
+            </li>
+          {{ end }}
+        </ul>
+      </nav>
+      {{ partial "theme-toggle.html" . }}
+    </div>
+  </div>
+</header>

@@ -1,0 +1,6 @@
+{{ if and .Params.toc (in .TableOfContents "<li>") }}
+  <aside class="table-of-contents" aria-labelledby="table-of-contents-title">
+    <h2 id="table-of-contents-title">On this page</h2>
+    {{ .TableOfContents }}
+  </aside>
+{{ end }}

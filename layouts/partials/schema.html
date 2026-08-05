@@ -1,0 +1,34 @@
+{{- $description := .Description | default site.Params.description -}}
+{{- $author := dict "@type" "Person" "name" site.Params.author "url" site.Home.Permalink -}}
+{{- $schema := dict
+  "@context" "https://schema.org"
+  "@type" "WebSite"
+  "name" site.Title
+  "url" site.Home.Permalink
+  "description" site.Params.description
+  "author" $author
+-}}
+{{- if and .IsPage (eq .Section "writing") -}}
+  {{- $schema = dict
+    "@context" "https://schema.org"
+    "@type" "BlogPosting"
+    "headline" .Title
+    "description" $description
+    "url" .Permalink
+    "mainEntityOfPage" .Permalink
+    "datePublished" (.Date.Format "2006-01-02T15:04:05Z07:00")
+    "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00")
+    "author" $author
+  -}}
+  {{- with .Params.tags -}}
+    {{- $schema = merge $schema (dict "keywords" (delimit . ", ")) -}}
+  {{- end -}}
+  {{- with .Params.socialimage -}}
+    {{- $imageURL := . | absURL -}}
+    {{- with $.Resources.GetMatch . -}}
+      {{- $imageURL = .Permalink -}}
+    {{- end -}}
+    {{- $schema = merge $schema (dict "image" $imageURL) -}}
+  {{- end -}}
+{{- end -}}
+<script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>

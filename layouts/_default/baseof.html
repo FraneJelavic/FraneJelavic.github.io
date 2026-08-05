@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}" dir="ltr">
+  <head>
+    {{ partial "head.html" . }}
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{ partial "header.html" . }}
+    <main id="main-content" class="site-main" tabindex="-1">
+      {{ block "main" . }}{{ end }}
+    </main>
+    {{ partial "footer.html" . }}
+    {{ $themeScript := resources.Get "js/theme.js" | minify | fingerprint "sha384" }}
+    <script src="{{ $themeScript.RelPermalink }}" integrity="{{ $themeScript.Data.Integrity }}" defer></script>
+    {{ partial "analytics.html" . }}
+  </body>
+</html>

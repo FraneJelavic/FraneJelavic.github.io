@@ -1,0 +1,36 @@
+{{ if .Store.Get "hasMermaid" }}
+  <script src="{{ "vendor/mermaid/mermaid.min.js" | relURL }}" defer></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var diagrams = Array.prototype.slice.call(document.querySelectorAll("pre.mermaid"));
+      if (!diagrams.length || typeof mermaid === "undefined") {
+        return;
+      }
+
+      diagrams.forEach(function (diagram) {
+        diagram.dataset.mermaidSource = diagram.textContent;
+      });
+
+      var renderDiagrams = function () {
+        var explicitTheme = document.documentElement.dataset.theme;
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var useDarkTheme = explicitTheme === "dark" || (!explicitTheme && prefersDark);
+
+        diagrams.forEach(function (diagram) {
+          diagram.removeAttribute("data-processed");
+          diagram.textContent = diagram.dataset.mermaidSource;
+        });
+
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: useDarkTheme ? "dark" : "neutral",
+          securityLevel: "strict"
+        });
+        mermaid.run({ nodes: diagrams });
+      };
+
+      renderDiagrams();
+      window.addEventListener("frane:themechange", renderDiagrams);
+    });
+  </script>
+{{ end }}

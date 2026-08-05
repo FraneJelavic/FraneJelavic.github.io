@@ -1,0 +1,16 @@
+{{ define "main" }}
+  <article class="page page--list">
+    <header class="page__header">
+      <h1>{{ .Title }}</h1>
+    </header>
+    {{ with .Content }}
+      <div class="prose">
+        {{ . }}
+      </div>
+    {{ end }}
+
+    {{ $posts := where .RegularPages "Draft" false }}
+    {{ $posts = $posts.ByDate.Reverse }}
+    {{ partial "post-list.html" (dict "pages" $posts "groupByYear" true) }}
+  </article>
+{{ end }}

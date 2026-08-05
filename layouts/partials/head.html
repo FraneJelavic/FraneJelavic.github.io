@@ -1,0 +1,15 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{ partial "theme-init.html" . }}
+{{ $pageTitle := cond .IsHome site.Title (printf "%s · %s" .Title site.Title) }}
+{{ $description := .Description | default site.Params.description }}
+<title>{{ $pageTitle }}</title>
+<meta name="description" content="{{ $description }}">
+<link rel="canonical" href="{{ .Permalink }}">
+{{ partial "seo.html" . }}
+{{ partial "schema.html" . }}
+{{ with .OutputFormats.Get "RSS" }}
+  <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ .Permalink }}">
+{{ end }}
+{{ $styles := resources.Get "css/main.css" | minify | fingerprint "sha384" }}
+<link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}">

@@ -1,0 +1,30 @@
+{{ $pages := .pages }}
+{{ $groupByYear := .groupByYear | default false }}
+{{ if gt (len $pages) 0 }}
+  {{ if $groupByYear }}
+    <div class="post-groups">
+      {{ range $pages.GroupByDate "2006" }}
+        <section class="post-year" aria-labelledby="year-{{ .Key }}">
+          <h2 id="year-{{ .Key }}">{{ .Key }}</h2>
+          <ul class="post-list">
+            {{ range .Pages }}
+              <li>
+                <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+              </li>
+            {{ end }}
+          </ul>
+        </section>
+      {{ end }}
+    </div>
+  {{ else }}
+    <ul class="post-list">
+      {{ range $pages }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+        </li>
+      {{ end }}
+    </ul>
+  {{ end }}
+{{ end }}

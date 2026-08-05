@@ -1,0 +1,8 @@
+<ul class="social-links">
+  {{ with site.Params.links.github }}
+    <li><a href="{{ . }}" rel="me">GitHub</a></li>
+  {{ end }}
+  {{ with site.Params.links.linkedin }}
+    <li><a href="{{ . }}" rel="me">LinkedIn</a></li>
+  {{ end }}
+</ul>

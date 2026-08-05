@@ -1,0 +1,16 @@
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <p>&copy; {{ now.Year }} {{ site.Params.author }}</p>
+    <nav class="footer-nav" aria-label="Footer">
+      {{ partial "social-links.html" . }}
+      <ul class="footer-links">
+        {{ with site.GetPage "/privacy" }}
+          <li><a href="{{ .RelPermalink }}">Privacy</a></li>
+        {{ end }}
+        {{ with site.Home.OutputFormats.Get "RSS" }}
+          <li><a href="{{ .RelPermalink }}">RSS</a></li>
+        {{ end }}
+      </ul>
+    </nav>
+  </div>
+</footer>

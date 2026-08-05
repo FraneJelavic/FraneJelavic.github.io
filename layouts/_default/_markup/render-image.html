@@ -1,0 +1,12 @@
+{{- $destination := .Destination -}}
+{{- $resource := .Page.Resources.GetMatch $destination -}}
+{{- $source := $destination -}}
+{{- with $resource -}}
+  {{- $source = .RelPermalink -}}
+{{- end -}}
+<figure class="content-image">
+  <img src="{{ $source | safeURL }}" alt="{{ .PlainText }}" loading="lazy" decoding="async"{{ with .Title }} aria-describedby="caption-{{ $.Ordinal }}"{{ end }}>
+  {{- with .Title }}
+    <figcaption id="caption-{{ $.Ordinal }}">{{ . }}</figcaption>
+  {{- end }}
+</figure>

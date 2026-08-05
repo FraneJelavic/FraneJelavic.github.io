@@ -1,0 +1,12 @@
+<script>
+  (function () {
+    try {
+      var preference = localStorage.getItem("frane-color-theme");
+      if (preference === "light" || preference === "dark") {
+        document.documentElement.dataset.theme = preference;
+      }
+    } catch (error) {
+      // The system preference remains the fallback when storage is unavailable.
+    }
+  }());
+</script>

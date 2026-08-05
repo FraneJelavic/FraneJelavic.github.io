@@ -1,0 +1,21 @@
+{{ define "main" }}
+  <article class="home">
+    <h1 class="visually-hidden">{{ site.Title }}</h1>
+    <div class="intro prose">
+      {{ .Content }}
+    </div>
+
+    {{ $posts := where site.RegularPages "Section" "writing" }}
+    {{ $posts = where $posts "Draft" false }}
+    {{ $posts = $posts.ByDate.Reverse }}
+    {{ if gt (len $posts) 0 }}
+      <section class="recent-writing" aria-labelledby="recent-writing-title">
+        <div class="section-heading">
+          <h2 id="recent-writing-title">Recent writing</h2>
+          <a href="{{ (site.GetPage "/writing").RelPermalink }}">All writing</a>
+        </div>
+        {{ partial "post-list.html" (dict "pages" (first 5 $posts) "groupByYear" false) }}
+      </section>
+    {{ end }}
+  </article>
+{{ end }}
