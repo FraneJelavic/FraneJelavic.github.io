@@ -139,7 +139,7 @@ for required_command in hugo mktemp find grep awk rm; do
 done
 
 hugo_version="$(hugo version)"
-if [[ ! "${hugo_version}" =~ (^|[[:space:]])hugo[[:space:]]v0\.164\.0([+[:space:]]|$) ]]; then
+if [[ ! "${hugo_version}" =~ (^|[[:space:]])hugo[[:space:]]v0\.164\.0([-+][^[:space:]]*)?([[:space:]]|$) ]]; then
   fail "Hugo ${EXPECTED_HUGO_VERSION} is required; found: ${hugo_version}"
 fi
 
