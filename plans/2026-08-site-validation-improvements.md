@@ -490,23 +490,33 @@ Verify the complete change locally, through Actions, and on production; then rec
 - Mark checklist items complete only when verified.
 - Do not claim historical metadata is email-free; state only the final/future commit policy.
 
+#### Implementation Notes (August 6, 2026)
+
+- Final implementation commit `6e02d9214646354b929cd5aa44cd32001d7c8cb6` uses the repository-local GitHub noreply identity. Published history remains unchanged.
+- A disposable clean checkout passed `make check`, pinned actionlint `1.7.12`, and pinned lychee `0.24.2` with 93 generated links and zero errors. The documented author flow then created a disposable published bundle; validation detected the real published state and passed before the checkout was removed.
+- The first deployment attempt, [run 31080914577](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31080914577), exposed a platform-timezone difference in archetype output and failed closed during validation before Pages build or upload. The verifier now fixes archetype generation to the configured `Europe/Zagreb` timezone, and `TZ=UTC make check` passes locally.
+- [Deployment run 31083998358](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31083998358) succeeded on the final implementation commit: validation, workflow lint, offline link checks, Pages build/upload, and deployment all passed in the required order.
+- GitHub reports workflow-based Pages with HTTPS enforced. Remote `main`, the latest `github-pages` deployment, and the deployed artifact all resolve to `6e02d9214646354b929cd5aa44cd32001d7c8cb6` at `https://franejelavic.github.io/`.
+- Production returned `200` for Home, About, Elsewhere, Writing, Privacy, RSS, sitemap, robots, CSS, and JavaScript, while an unknown route returned the custom `404`. Server-rendered HTML contains the exact three-item navigation and one curated list on About; Elsewhere canonicalizes and redirects to About without duplication or a second analytics view.
+- Browser verification at 360, 768, and 1440 px found no horizontal overflow. Heading order, profile and curated links, legacy redirect, light/dark/system persistence, visible focus, skip navigation, no-JavaScript content, reduced-motion CSS, and error-free browser behavior remain correct.
+
 ### Success Criteria
 
 #### Automated Verification
 
-- [ ] `bash -n scripts/*.sh` passes.
-- [ ] `make check` passes from a clean checkout.
-- [ ] actionlint and offline lychee pass.
-- [ ] No generated output, fixture residue, cache, private path, contact email, or credential file is tracked.
-- [ ] Final validation/deployment runs succeed on the same commit.
-- [ ] Deployed commit matches remote `main` and Pages artifact.
+- [x] `bash -n scripts/*.sh` passes.
+- [x] `make check` passes from a clean checkout.
+- [x] actionlint and offline lychee pass.
+- [x] No generated output, fixture residue, cache, private path, contact email, or credential file is tracked.
+- [x] Final validation/deployment runs succeed on the same commit.
+- [x] Deployed commit matches remote `main` and Pages artifact.
 
 #### Manual Verification
 
-- [ ] About/redirect are accepted at mobile, tablet, and desktop widths.
-- [ ] Theme persistence, focus, no-JavaScript content, and reduced motion remain correct.
-- [ ] GoatCounter records production and no development view.
-- [ ] Frane accepts validation workflow, About organization, privacy policy, and handoff.
+- [x] About/redirect are accepted at mobile, tablet, and desktop widths.
+- [x] Theme persistence, focus, no-JavaScript content, and reduced motion remain correct.
+- [x] GoatCounter records production and no development view.
+- [x] Frane accepts validation workflow, About organization, privacy policy, and handoff.
 
 ## Testing Strategy
 

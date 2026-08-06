@@ -567,6 +567,10 @@ The initial entries are the timestamped DUMP Days 2023 talk “Understanding the
 
 As a post-launch information-architecture follow-up, the curated list moved into About under `Talks and articles`, with separate `Talks` and `Articles` subsections. The primary navigation returned to `Home`, `Writing`, and `About`; `/elsewhere/` remains available as a compatibility redirect to `/about/`. This supersedes the location and navigation details in the historical enhancement record above without removing that record. All three destination URLs, titles, dates, descriptions, publisher attribution, and the precise YouTube timestamp remain unchanged, and validation now requires the list to appear only on About.
 
+### Validation and deployment follow-up (August 6, 2026)
+
+Completed the deterministic validation and information-architecture improvements in final implementation commit `6e02d9214646354b929cd5aa44cd32001d7c8cb6`. [Deployment run 31083998358](https://github.com/FraneJelavic/FraneJelavic.github.io/actions/runs/31083998358) passed repository and generated-artifact checks, workflow lint, offline link validation, Pages build/upload, and deployment in order. Remote `main`, the `github-pages` deployment, and production all matched that commit at `https://franejelavic.github.io/` when the handoff record was prepared. Future commits continue to use the repository-local GitHub noreply identity; no historical metadata was rewritten.
+
 ## Testing Strategy
 
 This static site does not need application unit tests or TDD. Verification should focus on the generated artifact and the real deployment boundary.
