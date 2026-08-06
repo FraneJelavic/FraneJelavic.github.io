@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" role="img" aria-labelledby="title description">
+  <title id="title">Synthetic validation flow</title>
+  <desc id="description">A fixture flows through a temporary build into deterministic checks.</desc>
+  <rect width="640" height="240" fill="#f4f6f8"/>
+  <g fill="#ffffff" stroke="#315f85" stroke-width="4">
+    <rect x="32" y="72" width="160" height="96" rx="12"/>
+    <rect x="240" y="72" width="160" height="96" rx="12"/>
+    <rect x="448" y="72" width="160" height="96" rx="12"/>
+  </g>
+  <g fill="#17212b" font-family="system-ui, sans-serif" font-size="20" text-anchor="middle">
+    <text x="112" y="128">Fixture</text>
+    <text x="320" y="128">Build</text>
+    <text x="528" y="128">Contract</text>
+  </g>
+  <g stroke="#315f85" stroke-width="4">
+    <path d="M192 120h48"/>
+    <path d="M400 120h48"/>
+  </g>
+</svg>

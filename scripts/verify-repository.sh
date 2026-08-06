@@ -63,6 +63,8 @@ done
 cd "${PROJECT_ROOT}"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "project root is not a Git worktree"
 
+[[ ! -e "content/elsewhere.md" ]] || fail "content/elsewhere.md: legacy curated-content source must remain removed"
+
 assert_no_tracked_path '(^|/)public(/|$)' "generated public/ output must not be tracked"
 assert_no_tracked_path '(^|/)resources/_gen(/|$)' "generated resources/_gen/ output must not be tracked"
 assert_no_tracked_path '(^|/)\.hugo_build\.lock$' "Hugo build locks must not be tracked"

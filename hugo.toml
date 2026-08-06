@@ -68,11 +68,6 @@ summaryLength = 30
   weight = 20
 
 [[menus.main]]
-  name = "Elsewhere"
-  pageRef = "/elsewhere"
-  weight = 30
-
-[[menus.main]]
   name = "About"
   pageRef = "/about"
-  weight = 40
+  weight = 30

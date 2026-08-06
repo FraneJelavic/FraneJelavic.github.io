@@ -563,6 +563,10 @@ At Frane's explicit request after accepting the launch, added a small `/elsewher
 
 The initial entries are the timestamped DUMP Days 2023 talk “Understanding the Database,” the Infobip Developers Hub article about the Claude/MCP developer-support system built by Luciano Peranni and Frane Jelavić, and Frane's ShiftMag article about migrating a 7 TB PostgreSQL database from AWS to an on-premises environment. Production acceptance checks require the page, navigation entry, and all three destination URLs. Responsive browser verification found no overflow at 360 or 1440 px, safe external-link attributes were present, and no console errors occurred.
 
+### Consolidation into About (August 5, 2026)
+
+As a post-launch information-architecture follow-up, the curated list moved into About under `Talks and articles`, with separate `Talks` and `Articles` subsections. The primary navigation returned to `Home`, `Writing`, and `About`; `/elsewhere/` remains available as a compatibility redirect to `/about/`. This supersedes the location and navigation details in the historical enhancement record above without removing that record. All three destination URLs, titles, dates, descriptions, publisher attribution, and the precise YouTube timestamp remain unchanged, and validation now requires the list to appear only on About.
+
 ## Testing Strategy
 
 This static site does not need application unit tests or TDD. Verification should focus on the generated artifact and the real deployment boundary.

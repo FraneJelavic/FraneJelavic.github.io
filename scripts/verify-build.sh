@@ -80,6 +80,21 @@ assert_not_contains() {
   fi
 }
 
+assert_count() {
+  local scenario="$1"
+  local output_dir="$2"
+  local relative_path="$3"
+  local needle="$4"
+  local expected_count="$5"
+  local contract="$6"
+  local file="${output_dir}/${relative_path}"
+  local actual_count
+
+  [[ -f "${file}" ]] || fail "${scenario}: ${relative_path}: missing file required for ${contract}"
+  actual_count="$(count_occurrences "${file}" "${needle}")"
+  [[ "${actual_count}" -eq "${expected_count}" ]] || fail "${scenario}: ${relative_path}: expected ${expected_count} occurrence(s) for ${contract}; found ${actual_count}"
+}
+
 assert_before() {
   local scenario="$1"
   local output_dir="$2"
@@ -146,15 +161,50 @@ assert_core_artifacts() {
   done
 }
 
-assert_elsewhere_content() {
+assert_about_content_and_navigation() {
   local scenario="$1"
   local production_dir="$2"
+  local about_page="about/index.html"
+  local elsewhere_page="elsewhere/index.html"
+  local navigation='<nav class=primary-nav aria-label=Primary><ul><li><a href=/ aria-current=page>Home</a></li><li><a href=/writing/>Writing</a></li><li><a href=/about/>About</a></li></ul></nav>'
+  local biography='I’m Frane Jelavic. I enjoy learning how complex systems behave in production, particularly around databases, distributed systems, reliability, and performance. This site is where I write down and share what I learn.'
+  local talk_url='https://www.youtube.com/watch?v=E7xBu7ZdP28&amp;t=19085s'
+  local automation_url='https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp'
+  local migration_url='https://shiftmag.dev/database-migration-developers-open-heart-surgery-1926/'
 
-  assert_contains "${scenario}" "${production_dir}" "elsewhere/index.html" "Understanding the Database" "DUMP Days talk"
-  assert_contains "${scenario}" "${production_dir}" "elsewhere/index.html" "E7xBu7ZdP28" "timestamped YouTube link"
-  assert_contains "${scenario}" "${production_dir}" "elsewhere/index.html" "https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp" "developer automation article"
-  assert_contains "${scenario}" "${production_dir}" "elsewhere/index.html" "https://shiftmag.dev/database-migration-developers-open-heart-surgery-1926/" "database migration article"
-  assert_contains "${scenario}" "${production_dir}" "index.html" "href=/elsewhere/" "Elsewhere primary navigation item"
+  assert_contains "${scenario}" "${production_dir}" "index.html" "${navigation}" "exact Home, Writing, About primary navigation"
+  assert_not_contains "${scenario}" "${production_dir}" "index.html" "href=/elsewhere/" "legacy Elsewhere destination must not remain in primary navigation"
+
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" "${biography}" "approved biography"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'href=https://github.com/FraneJelavic rel=me>GitHub</a>' "GitHub profile link"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'href=https://www.linkedin.com/in/frane-jelavi%C4%87-92551660/ rel=me>LinkedIn</a>' "LinkedIn profile link"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" '<h1>About</h1>' "About H1"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" '<h2 id=talks-and-articles>Talks and articles' "curated-list H2"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" '<h3 id=talks>Talks' "Talks H3"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" '<h3 id=articles>Articles' "Articles H3"
+  assert_before "${scenario}" "${production_dir}" "${about_page}" '<h1>About</h1>' '<h2 id=talks-and-articles>' "About H1 before curated-list H2"
+  assert_before "${scenario}" "${production_dir}" "${about_page}" '<h2 id=talks-and-articles>' '<h3 id=talks>' "curated-list H2 before Talks H3"
+  assert_before "${scenario}" "${production_dir}" "${about_page}" '<h3 id=talks>' '<h3 id=articles>' "Talks H3 before Articles H3"
+
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Selected talks and articles published elsewhere.' "curated-list introduction"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" "${talk_url}" "precisely timestamped YouTube destination"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Understanding the Database' "DUMP Days talk title"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'DUMP Days · 2023 · Video starts at 5:18:05' "DUMP Days talk details"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'How to automate developer support with Claude and MCP' "developer automation article title"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Infobip Developers Hub · 2026' "developer automation publisher and date"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'A look at an AI support system built with Claude and MCP to automate developer-support workflows.' "developer automation description"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Database migration: Developers&rsquo; open-heart surgery' "database migration article title"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'ShiftMag · 2023' "database migration publisher and date"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Moving a 7 TB PostgreSQL database from AWS to an on-premises environment.' "database migration description"
+  assert_count "${scenario}" "${production_dir}" "${about_page}" "${talk_url}" 1 "one canonical talk destination"
+  assert_count "${scenario}" "${production_dir}" "${about_page}" "${automation_url}" 1 "one canonical developer automation destination"
+  assert_count "${scenario}" "${production_dir}" "${about_page}" "${migration_url}" 1 "one canonical database migration destination"
+
+  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'rel=canonical href=https://franejelavic.github.io/about/' "legacy URL canonical target"
+  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'http-equiv=refresh content="0; url=https://franejelavic.github.io/about/"' "legacy URL redirect target"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'Understanding the Database' "legacy URL must not duplicate curated content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${automation_url}" "legacy URL must not duplicate article content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${migration_url}" "legacy URL must not duplicate article content"
 }
 
 assert_canonical_urls() {
@@ -245,17 +295,23 @@ assert_goatcounter() {
   local expected_count="$3"
   local html_file
   local endpoint_count
+  local file_expected_count
   local goatcounter_count
   local loader_count
 
   while IFS= read -r -d '' html_file; do
+    file_expected_count="${expected_count}"
+    if [[ "${expected_count}" -eq 1 ]] && grep -Fq 'http-equiv=refresh' "${html_file}"; then
+      file_expected_count=0
+    fi
+
     endpoint_count="$(count_occurrences "${html_file}" "${GOATCOUNTER_ENDPOINT}")"
     goatcounter_count="$(count_occurrences "${html_file}" 'goatcounter.com/count')"
     loader_count="$(count_occurrences "${html_file}" "${GOATCOUNTER_LOADER}")"
 
-    [[ "${endpoint_count}" -eq "${expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${expected_count} GoatCounter endpoint(s); found ${endpoint_count}"
-    [[ "${goatcounter_count}" -eq "${expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${expected_count} GoatCounter endpoint reference(s); found ${goatcounter_count}"
-    [[ "${loader_count}" -eq "${expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${expected_count} GoatCounter loader(s); found ${loader_count}"
+    [[ "${endpoint_count}" -eq "${file_expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${file_expected_count} GoatCounter endpoint(s); found ${endpoint_count}"
+    [[ "${goatcounter_count}" -eq "${file_expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${file_expected_count} GoatCounter endpoint reference(s); found ${goatcounter_count}"
+    [[ "${loader_count}" -eq "${file_expected_count}" ]] || fail "${scenario}: ${html_file#"${output_dir}/"}: expected ${file_expected_count} GoatCounter loader(s); found ${loader_count}"
 
     if [[ "${endpoint_count}" -ne "${loader_count}" || "${endpoint_count}" -ne "${goatcounter_count}" ]]; then
       fail "${scenario}: ${html_file#"${output_dir}/"}: incomplete or unexpected GoatCounter integration"
@@ -424,7 +480,7 @@ hugo \
   || fail "real development: Hugo build failed"
 
 assert_core_artifacts "real production" "${production_output}"
-assert_elsewhere_content "real production" "${production_output}"
+assert_about_content_and_navigation "real production" "${production_output}"
 assert_canonical_urls "real production" "${production_output}"
 assert_no_private_content "real production" "${production_output}"
 assert_actual_writing_state "real production" "${production_output}"
