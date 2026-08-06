@@ -7,6 +7,7 @@ readonly PRODUCTION_ORIGIN="https://franejelavic.github.io/"
 readonly GOATCOUNTER_ENDPOINT="https://franejelavic.goatcounter.com/count"
 readonly GOATCOUNTER_LOADER="https://gc.zgo.at/count.js"
 readonly FIXED_CLOCK="2026-08-05T12:00:00+02:00"
+readonly SITE_TIME_ZONE="Europe/Zagreb"
 readonly FEATURE_TITLE="Validation Fixture: Feature Article"
 readonly SECONDARY_TITLE="Validation Fixture: Secondary Article"
 readonly DRAFT_CONTROL_TITLE="Validation Control: Draft Must Stay Hidden"
@@ -413,7 +414,8 @@ assert_writing_archetype() {
 
   mkdir -p "${content_root}"
   note "generating writing archetype under the temporary root"
-  HUGO_LANGUAGES_EN_CONTENTDIR="${content_root}" \
+  TZ="${SITE_TIME_ZONE}" \
+    HUGO_LANGUAGES_EN_CONTENTDIR="${content_root}" \
     hugo new content --clock "${FIXED_CLOCK}" writing/archetype-contract/index.md \
     || fail "${scenario}: Hugo content generation failed"
 
