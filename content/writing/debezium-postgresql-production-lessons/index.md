@@ -2,8 +2,8 @@
 title = 'Debezium and PostgreSQL in Production: Surviving Database Failover'
 date = '2026-08-10T17:00:00+02:00'
 lastmod = '2026-08-10T17:00:00+02:00'
-draft = true
-description = 'What PostgreSQL replication slots taught us about operating Debezium a HA production environment.'
+draft = false
+description = 'What PostgreSQL replication slots taught us about operating Debezium in an HA production environment.'
 categories = ['Distributed Systems']
 tags = ['Debezium', 'PostgreSQL', 'Kafka Connect', 'CDC']
 toc = true
@@ -16,32 +16,33 @@ The central lesson was to treat PostgreSQL’s replication slot and Debezium’s
 
 ## The pipeline
 
-Our applications uses the transactional outbox pattern. A business change and the corresponding outbox record are committed in the same database transaction. Debezium reads changes to the outbox table from PostgreSQL’s write-ahead log, transforms them into the event format expected by consumers, and publishes them to Kafka.
+Our applications use the transactional outbox pattern. A business change and the corresponding outbox record are committed in the same database transaction. Debezium reads changes to the outbox table from PostgreSQL’s write-ahead log, transforms them into the event format expected by consumers, and publishes them to Kafka.
 
-![application flow](images/appFlow.png)
+![An application commits business data and an outbox record to PostgreSQL; Debezium reads the replication slot and publishes the event to Kafka](images/appFlow.png)
 
 This removes the unsafe gap between committing a database transaction and separately attempting to publish an event. If Debezium or Kafka is temporarily unavailable, the committed outbox row remains available for later processing.
 
-The pipeline operates on an at-least-once guarantee. A failure can occur after an event reaches Kafka but before the corresponding source offset is durably recorded. Debezium can then replay the event after restarting, so consumers must be idempotent.
+The pipeline provides at-least-once delivery. A failure can occur after an event reaches Kafka but before the corresponding source offset is durably recorded. Debezium can then replay the event after restarting, so consumers must be idempotent.
 
-## Knowledge refresher
+## WAL refresher
 
 ### WAL and LSN
 
-PostgreSQL reads the relevant data page into memory (`shared buffers`). The page is modified in the memory and a corresponding WAL (`Write Ahead Log`) record is created. The WAL record is placed into WAL buffers and the corresponding page is marked as dirty with a page LSN (`Log Sequence Number`). The page LSN records which WAL entry corresponds to the page’s latest changes. Before that dirty page can be written to its table/index file, the corresponding WAL must be flushed to durable storage.
+PostgreSQL reads the relevant data page into memory (`shared buffers`). The page is modified in memory, and a corresponding WAL (write-ahead log) record is created. The WAL record is placed in the WAL buffers, and the corresponding page is marked as dirty with a page LSN (log sequence number). The page LSN records which WAL entry corresponds to the page’s latest changes. Before that dirty page can be written to its table or index file, the corresponding WAL must be flushed to durable storage.
 
-![PostgreSQL WAL](images/PostgresWAL.png)
+![PostgreSQL records inserts, updates, and deletes in WAL before modified pages are written during a checkpoint](images/PostgresWAL.png)
 
 ### `wal_level = logical`
 
-Setting the wal_level from replica (default) to logical is mandatory change to support logical decoding for logical replication (requires full server restart).
-WAL get's *additional information* (catalog snapshot, changes, transaction boundaries, etc.) so rows can be reconstructed as SQL changes.
+Changing `wal_level` from its default value of `replica` to `logical` is required to support logical decoding for logical replication. This change requires a full server restart.
+WAL includes *additional information* (catalog snapshots, changes, transaction boundaries, etc.) so that row changes can be reconstructed.
 
-![logical decoding](images/logicalDecoding.png)
+![Logical decoding reconstructs committed transaction changes from interleaved WAL records](images/logicalDecoding.png)
 
 ## One checkpoint across two systems
 
 PostgreSQL and Kafka Connect each retain part of the connector’s progress:
+
 - PostgreSQL’s logical replication slot retains the WAL required by the connector.
 - Kafka Connect stores Debezium’s most recently committed source offset in its offset topic.
 
@@ -50,7 +51,7 @@ Conceptually, progress moves through the system like this:
 ```text
 PostgreSQL generates WAL
       └─ the logical slot exposes changes
-            └─ Debezium streams & decodes
+            └─ Debezium streams and decodes
                   ├─ advances slot's LSN → PG recycles older WAL
                   └─ commits source offset to Kafka topic
 ```
@@ -59,43 +60,39 @@ PostgreSQL generates WAL
 These positions do not remain identical at every instant. PostgreSQL, Debezium, and Kafka progress independently.
 The important invariant is:
 
-After failover, PostgreSQL must retain every WAL record Debezium might request from its last durable Kafka Connect offset.
+> After failover, PostgreSQL must retain every WAL record Debezium might request from its last durable Kafka Connect offset.
 
 Starting from an older position may replay events. Starting from a newer position may skip them. Replay is recoverable with idempotent consumers; an LSN gap is not.
 The accompanying [PostgreSQL 16 and Debezium playground](https://github.com/FraneJelavic/postgres-debezium-playground) can be used to inspect slots, publications, and connector offsets in a local cluster.
 
 ## The PostgreSQL 16 failover problem
 
-PostgreSQL 16 supports logical decoding and logical replication slots on a standby. However, it does not automatically synchronize the primary’s logical slot state to the standbys.
+PostgreSQL 16 supports logical decoding and logical replication slots on a standby. However, it does not automatically synchronize the primary’s logical slot state with the standbys.
 
 Before failover, Debezium consumes through a logical slot on the primary while Kafka Connect stores its durable source offset:
 
-![system before failover](images/beforeFailover.png)
+![Before failover, Debezium reads the logical slot on the primary while Kafka Connect stores its durable LSN in the offset topic](images/beforeFailover.png)
 
 If the standby is promoted without a usable copy of that slot, Debezium cannot simply continue from the same checkpoint.
 Creating a replacement slot on the new primary is not equivalent. A new slot begins from a position available at creation time and cannot be moved backward to recover WAL that is no longer retained.
 
-![data loss scenario](images/afterFailover.png)
+![After failover, a replacement slot starts beyond Kafka Connect's durable LSN, creating a potential event gap](images/afterFailover.png)
 
 No events were lost in our case. We identified this as a failure mode that had to be eliminated before the standby could safely accept Debezium after promotion.
 
 ### Patroni permanent logical slots
 
-[Alexander Kukushkin (The Patroni guy)](https://github.com/cyberdem0n) in a [podcast](https://www.youtube.com/watch?v=SllJsbPVaow) with [Nikolay Samokhvalov](https://github.com/NikolayS) explains how the problem was solved in Patroni with permanent replication slots.
+[Alexander Kukushkin (the Patroni guy)](https://github.com/cyberdem0n) explains how Patroni solved this problem with permanent replication slots in a [podcast](https://www.youtube.com/watch?v=SllJsbPVaow) with [Nikolay Samokhvalov](https://github.com/NikolayS).
 
-**TLDV** Patroni implementation does the following:
-- Uses **fsync** (forces flush to disk on the OS level) to copy the replication slot from `$PGDATA/pg_replslot/slot_name`
-    - requires a `superuser` or `rewind_user` to copy files
-    - a restart of standy nodes is needed for the replication slots to be created
-    - uses pg_read_binary_file() function to copy the slot file if it is missing on the replica
-- Utilizes Patroni **loop_wait** (default 10s) to call `pg_replication_slot_advance('slot_name', 'LSN_position')` and move the LSN on the replication slot forward to a specific position
-- Automatically enables `hot_standby_feedback` if it is not already enabled
-- Uses replication slot after replica has been promoted to primary
+As described in Patroni’s official documentation for [permanent replication slots](https://patroni.readthedocs.io/en/latest/dynamic_configuration.html#dynamic-configuration-settings), logical slots are copied from the primary to standby nodes and their positions are advanced periodically. Patroni’s [slot synchronization implementation](https://patroni.readthedocs.io/en/latest/modules/patroni.postgresql.slots.html) creates missing logical slots on replicas by copying them from the primary and advances existing slots when their confirmed position falls behind.
 
-**Potential problems**
-- requested WAL segment `pg_wal/XXX` has been removed
-- physical slot is behind logical slot (unlikely to happen)
-    - physical slot did not reach the `catalog_xmin` transaction of the logical slot on the old primary (Patroni logs a WARN message that it might be unsafe to use)
+Permanent logical slots require `postgresql.use_slots` to be enabled. Patroni also enforces the `hot_standby_feedback` setting on nodes that host permanent logical slots so the primary retains catalog rows needed for logical decoding.
+
+**Potential problems:**
+
+- The requested WAL segment `pg_wal/XXX` has been removed.
+- The physical slot is behind the logical slot (unlikely to happen).
+    - The physical slot did not reach the `catalog_xmin` transaction of the logical slot on the old primary. Patroni logs a warning that it might be unsafe to use.
 
 
 ### [Zeno's paradox](https://en.wikipedia.org/wiki/Zeno%27s_paradoxes)
@@ -109,7 +106,7 @@ This slot has been invalidated because it was conflicting with recovery.
 ```
 
 This was not simply a matter of retaining more WAL. Logical decoding also depends on catalog visibility represented by `catalog_xmin`. Increasing `wal_keep_size` alone could not restore catalog rows that recovery and vacuum had already made unavailable.
-Increasing `max_standby_streaming_delay` also didn't help as long as the standby was rebooted.
+Increasing `max_standby_streaming_delay` also did not help while the standby still had to be rebooted.
 
 The system was effectively chasing a moving checkpoint: by the time the standby came back and attempted to use the copied state, the required catalog horizon had already moved.
 
@@ -117,23 +114,21 @@ The system was effectively chasing a moving checkpoint: by the time the standby 
 
 Instead of treating the operation as a reusable sequence of commands, we treated it as a checkpoint-alignment problem.
 
-1. Create the corresponding logical slots on the replicas by hand
-    - `pg_create_logical_replication_slot('slot_name', 'pgoutput')`
-2. Align them with the safely acknowledged position on the primary
-    - `pg_replication_slot_advance('slot_name', 'LSN/12345')`
-3. Add the permanent-slot configuration to Patroni
-4. Reload the configuration instead of restarting the database nodes
-5. Patroni continues to monitor and advance slots without `ERROR`
+In our Patroni 3.3.1 rollout, allowing Patroni to introduce missing permanent logical slots required restarting the busy standbys so that the copied slot state could take effect. Those restarts created the race described above: by the time a standby returned, the required catalog horizon could already have moved.
 
-The property we validated was:\
+The turning point was to create the corresponding logical slot directly on each PostgreSQL 16 standby before enabling Patroni’s permanent-slot configuration. PostgreSQL could create those slots without restarting the standbys. We aligned each slot only to a checkpoint that we had verified as safe, then reloaded the Patroni configuration. Because the slots already existed, Patroni adopted them and continued advancing their positions instead of entering the missing-slot copy path.
 
-Every candidate primary retained a usable logical slot covering every WAL record Debezium might request after promotion.
+This is intentionally an analysis rather than a reusable runbook. The safe checkpoint depends on the primary, standby replay position, retained WAL, and Debezium’s durable offset; advancing a slot too far can create the event gap this process is meant to prevent.
 
-Subsequent production failovers completed without detected LSN gaps or skipped events.`
+The property we validated was:
+
+> Every candidate primary retained a usable logical slot covering every WAL record Debezium might request after promotion.
+
+Subsequent production failovers completed without detected LSN gaps or skipped events.
 
 ### What PostgreSQL 17 changes
 
-PostgreSQL 17 introduced synchronized failover slots. A logical slot marked for failover can be synchronized from the primary to a standby using PostgreSQL’s native slot-synchronization facilities.
+PostgreSQL 17 introduced synchronized failover slots. A logical slot marked for failover can be synchronized from the primary to a standby using PostgreSQL’s native slot-synchronization facilities. The official [PostgreSQL 17 logical replication failover documentation](https://www.postgresql.org/docs/17/logical-replication-failover.html) describes the configuration and readiness checks.
 
 This reduces the need for PostgreSQL 16-era slot-copying approaches, but it does not remove the operational responsibility. Synchronization is asynchronous, and failover readiness must still be verified before promotion.
 
