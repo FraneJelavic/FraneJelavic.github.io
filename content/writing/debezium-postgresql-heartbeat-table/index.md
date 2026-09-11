@@ -159,7 +159,7 @@ This removes the heartbeat table and its permissions from the design. Use it onl
 
 PostgreSQL's `max_slot_wal_keep_size` limits how much WAL a replication slot may retain. Set it to protect the database from filling its disk, but do not mistake it for backlog management.
 
-When a slot falls beyond that limit, PostgreSQL can remove WAL which the slot still needs. Debezium should detect that it can no longer resume without a gap. Recovery then means creating a usable slot and usually taking a new snapshot. The limit turns an unbounded disk failure into an explicit CDC failure. That is better, but the pipeline is still down.
+When a slot falls beyond that limit, PostgreSQL can remove WAL which the slot still needs. Debezium should detect that it can no longer continue without a gap. Recovery then means creating a usable slot and usually taking a new snapshot. The limit turns an unbounded disk failure into an explicit CDC failure. That is better, but the pipeline is still down.
 
 This also separates two concerns which are often mixed together. Debezium's at-least-once delivery promise covers changes it can read from a valid slot. It cannot make PostgreSQL retain WAL forever, and it cannot advance a quiet slot without a source-side event.
 
