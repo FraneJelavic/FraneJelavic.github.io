@@ -14,20 +14,25 @@ socialImage = ''
 >
 > This article records my current understanding of MongoDB and WiredTiger, built through hands-on operation and continued study. It is a **learning** document. I have tried to keep the technical details accurate, but any errors or oversimplifications are mine. [MongoDB official docs](https://www.mongodb.com/docs/manual/) and [WiredTiger documentation](https://source.wiredtiger.com/develop/index.html) should always be consulted for correctness and clarity.
 
-## Baptism by Fire
+## Baptism by fire
 
 When I first encountered MongoDB, I tried to understand it through the database I knew best: PostgreSQL.
 
-My journey was a *baptism by fire*. Managing a sharded cluster with 20 TB of data and handling as high as ~55k ops/sec (~29k of it writes).
-The cluster had 6 shards, each of course being it's own replica set, with corresponding config server replica set and 6 routers.
+My journey was a *baptism by fire*. I was managing a sharded cluster with 20 TB of data and as many as ~55k operations per second, including ~29k writes. The cluster had six shards, each with its own replica set, a config server replica set, and six routers.
 
 To operate that cluster safely, I had to stop treating MongoDB like PostgreSQL and learn how it worked internally.
+
+At one point, while tackling a flow control problem on the stated cluster a recommendation from an AI model was: increase the portion of memory assigned to the WiredTiger cache. At the moment the recommendation sound genuine and correct, but I did not know what the model has based its conclusions off. To be completely honest, neither did I know how RAM is used by MongoDB. The nail in the coffin was the [official docs](https://www.mongodb.com/docs/manual/core/wiredtiger/#memory-use) saying don't change WiredTiger cache to RAM ratio.
+
+That experience clarified why I wanted to learn the internals. I want/need enough understanding to connect operational advice to a mechanism, identify the evidence it depends on, and decide. This applies whether the advice comes from AI, a colleague, documentation, or my own assumptions.
 
 What happens after a MongoDB client sends a write?
 
 How does that write pass through MongoDB and WiredTiger, and when does it become durable on disk?
 
-## Following One Write
+And when someone recommends changing a WiredTiger setting, what would have to be true for that recommendation to make sense?
+
+## Following one write
 
 When a client sends a write operation to a sharded cluster, the request first reaches a router called `mongos`. Routers cache data from the config server about chunk - shard placements. Using this data `mongos` determine which shard owns the relevant data and forward the operation to that shard's primary node.
 
@@ -37,7 +42,7 @@ However, this post does not compare replica sets and sharded clusters. Once rout
 
 How does the primary `mongod` process request, persist it, and replicate it to secondary nodes?
 
-## Separation of Concern
+## Separation of concern
 
 To answer my question(s), I firstly had to understand where `mongod` ends and the storage engine `WiredTiger` begins.
 
@@ -69,7 +74,7 @@ shard primary (mongod)
 Ok, but how does this come to play? Boundaries are not absolute.
 The oplog, belongs to MongoDB's (logical) replication model, but WiredTiger stores it alongside other collection data.
 
-## One Write, Two Logs
+## One write, two logs
 
 At this point, I had another question. If MongoDB already has a `journal`, why does it also need an oplog?
 
@@ -81,7 +86,7 @@ This raises an important consistency question. What prevents MongoDB from commit
 
 ![Client write path](images/twoWritePaths-v2.png)
 
-### Data Folder
+### Data folder
 
 Let's examine what happens on one node and then additionally complicate the story by adding secondaries.
 
@@ -133,7 +138,7 @@ The `journal/` directory contains those write-ahead log files. They protect chan
 
 Finally, `WiredTiger.lock` is the file on which WiredTiger acquires a lock to prevent two processes from opening the same database directory simultaneously. The lock state matters, not merely the existence of the file.
 
-### The WiredTiger Cache
+### The WiredTiger cache
 
 WiredTiger does not modify the `collection-*.wt` and `index-*.wt` files directly for every client operation. It first reads the required pages into its internal cache and applies the change there as part of a storage transaction. Modified pages become dirty until WiredTiger reconciles and writes them to disk.
 
@@ -143,11 +148,13 @@ MongoDB therefore benefits from **both caches**, WiredTiger and the OS cache.
 
 Giving all available memory to the WiredTiger cache would leave too little memory for the filesystem cache and the rest of `mongod` and respecting the default, `max((availRAM - 1024) x 0.5, 256 MB)`, is strongly advised by [the official docs.](https://www.mongodb.com/docs/manual/core/wiredtiger/#memory-use)
 
+This is already enough to show why "increase the WiredTiger cache" is incomplete advice. A larger cache does not create memory. It transfers memory away from the filesystem cache and other allocations. Whether that trade is useful depends on the workload and the source of the observed pressure.
+
 When the cache approaches its limits, WiredTiger evicts pages to make room. Clean pages can be discarded and read again later. Dirty pages must first be reconciled into an on-disk representation.
 
 A committed change does not have to wait for its dirty page to reach the collection file. The journal supplies durability between checkpoints. This separation is the reason a write can be durable even though its final data page is still dirty in memory.
 
-### Recovering After a Crash
+### Recovering after a crash
 
 In case of a crash, WiredTiger starts from the last complete checkpoint. The checkpoint metadata identifies a consistent view of the WiredTiger tables and the journal position associated with it.
 
@@ -157,7 +164,7 @@ WiredTiger then replays the journal records created after that checkpoint. At a 
 last complete checkpoint + later durable journal records = recovered local state
 ```
 
-### Checkpoints and Data Files
+### Checkpoints and data files
 
 WiredTiger normally creates a checkpoint every (configurable default) 60 seconds. A checkpoint can take longer when there is more dirty data or the storage device is under pressure.
 
@@ -179,7 +186,7 @@ WiredTiger transaction
                     recovered state
 ```
 
-### How the Primary Records an Operation
+### How the primary records an operation
 
 For an incoming query `mongod` will, among other things, determine collection and index changes and construct the oplog logical entry.
 It uses WiredTiger to start/use a transaction and
@@ -203,7 +210,7 @@ This is not a complete definition of how oplog and collection changes work but t
 
 Only the local commit is atomic. Sending or copying the oplog entry across the network is not part of that storage transaction.
 
-### How Secondaries Copy and Apply Oplog Entries
+### How secondaries copy and apply oplog entries
 
 Each secondary continuously selects a sync source and streams newer oplog entries from it. The sync source is often the primary.
 
@@ -214,7 +221,7 @@ Secondary's uses it's own WiredTiger instance to apply changes. They modify its 
 This is the important distinction and the answer why we can't just ship primaries `*.wt` binaries to the secondary.
 On two MongoDB servers these are different files.
 
-### Oplog Versus Journal
+### Oplog versus journal
 
 | Property | Oplog |  Journal |
 |---|---|---|
@@ -226,15 +233,34 @@ On two MongoDB servers these are different files.
 | Replicated? | Yes, logically | No |
 
 
-## Takeaways
+### Takeaways
 
-- The WiredTiger journal and the oplog are both logs, but they solve different problems. The journal recovers one member; the oplog replicates logical operations between members.
-- On the primary, MongoDB commits a replicated data change and its oplog entry in the same storage transaction.
-- Primary and secondaries have separate WiredTiger database, caches, journals, data files.
-- Because replication is above the storage engine, MongoDB can support different storage engines without changing the replication protocol.
+This gives a practical sequence for evaluating operational changes:
+
+1. Identify which component owns the behavior
+2. Describe the mechanism that is a cause of the problem
+3. Find evidence supporting that mechanism
+4. Clarify what should be the improvements
+5. Measure
+6. Iterate
+
+The technical facts in this article support that way of reasoning:
+
+- The WiredTiger journal and the oplog solve different problems. The journal recovers one member; the oplog replicates logical operations between members.
+- MongoDB commits a replicated data change and its oplog entry in the same local storage transaction on the primary.
+- A durable change can still exist as a dirty cache page because the journal protects it between checkpoints.
+- Primaries and secondaries have separate WiredTiger databases, caches, journals, and data files.
+- Memory assigned to WiredTiger is part of a larger allocation decision that includes the filesystem cache and other process memory.
 
 
-## Further Reading
+## Why I wanted to understand this
+
+Learning how WiredTiger works does not mean that I can derive every production decision from first principles. It gives me a way to examine a recommendation instead of accepting it because the source sounds confident and we all know AI can sound like that.
+
+The quality of an (AI) recommendation depends on the question and the evidence supplied to it.
+
+
+## Further reading
 
 - [MongoDB manual: WiredTiger storage engine](https://www.mongodb.com/docs/manual/core/wiredtiger/)
 - [MongoDB manual: Journaling](https://www.mongodb.com/docs/manual/core/journaling/)
