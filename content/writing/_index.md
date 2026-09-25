@@ -1,4 +1,4 @@
 +++
 title = "Writing"
-description = "Writing by Frane Jelavic."
+description = "Writing by Frane Jelavić."
 +++

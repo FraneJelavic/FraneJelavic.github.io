@@ -1,5 +1,5 @@
 baseURL = "https://franejelavic.github.io/"
-title = "Frane Jelavic"
+title = "Frane Jelavić"
 defaultContentLanguage = "en"
 timeZone = "Europe/Zagreb"
 enableRobotsTXT = true
@@ -17,8 +17,8 @@ summaryLength = 30
     weight = 1
 
 [params]
-  author = "Frane Jelavic"
-  description = "Frane Jelavic is a Principal Engineer at Infobip who builds software around databases, distributed systems, and production infrastructure."
+  author = "Frane Jelavić"
+  description = "Frane Jelavić is a Principal Engineer at Infobip who designs and operates database-heavy distributed systems."
   goatCounterEndpoint = "https://franejelavic.goatcounter.com/count"
 
   [params.links]

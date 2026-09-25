@@ -1,15 +1,10 @@
 +++
 title = "Home"
-description = "Frane Jelavic is a Principal Engineer at Infobip who builds software around databases, distributed systems, and production infrastructure."
+description = "Frane Jelavić is a Principal Engineer at Infobip who designs and operates database-heavy distributed systems."
 +++
 
-Hi there! 
+Hi, I'm Frane, a Principal Engineer at Infobip.
 
-I'm Frane, a Principal Engineer at Infobip.
-I enjoy building software around infrastructure, mostly databases and distributed systems.
-During my career I had the chance to tackle production challenges around PostgreSQL, Kafka, Debezium, database migrations, microservice extraction as well as bringing microservices back to monoliths, etc.
-Recently I'm also administrating an learning about MongoDB.
+I design and operate database-heavy distributed systems, with a focus on high availability, change data capture, reliability, and performance. I work with PostgreSQL, MongoDB, Kafka, Debezium, Go, and Java.
 
-Apart from my work, I enjoy writing about what I learn and sharing it with the community.
-This blog is mostly a reference for myself, helping me aggregate my thoughts and learning in one place.
-I hope it can be useful for others as well.
+I use this site to document production problems, study the mechanisms behind them, and explain how I reason about operational decisions. I also publish through ShiftMag and the Infobip Developers Hub.

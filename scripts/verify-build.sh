@@ -168,8 +168,9 @@ assert_about_content_and_navigation() {
   local about_page="about/index.html"
   local elsewhere_page="elsewhere/index.html"
   local navigation='<nav class=primary-nav aria-label=Primary><ul><li><a href=/ aria-current=page>Home</a></li><li><a href=/writing/>Writing</a></li><li><a href=/about/>About</a></li></ul></nav>'
-  local biography='I’m Frane Jelavic. I enjoy learning how complex systems behave in production, particularly around databases, distributed systems, reliability, and performance. This site is where I write down and share what I learn.'
+  local biography='I’m Frane Jelavić, a Principal Engineer at Infobip. I design and operate database-heavy distributed systems, with a focus on high availability, change data capture, reliability, and performance. I work with PostgreSQL, MongoDB, Kafka, Debezium, Go, and Java.'
   local talk_url='https://www.youtube.com/watch?v=E7xBu7ZdP28&amp;t=19085s'
+  local mongodb_url='https://shiftmag.dev/mongodb-one-write-two-logs-12267/'
   local failover_url='https://shiftmag.dev/how-to-survive-database-failover-debezium-and-postgresql-in-production-11676/'
   local automation_url='https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp'
   local migration_url='https://shiftmag.dev/database-migration-developers-open-heart-surgery-1926/'
@@ -192,6 +193,8 @@ assert_about_content_and_navigation() {
   assert_contains "${scenario}" "${production_dir}" "${about_page}" "${talk_url}" "precisely timestamped YouTube destination"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Understanding the Database' "DUMP Days talk title"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'DUMP Days · 2023 · Video starts at 5:18:05 (Croatian)' "DUMP Days talk details"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'MongoDB: One write, two logs' "MongoDB article title"
+  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Following a write through MongoDB replication and WiredTiger to separate the oplog&rsquo;s role in replication from the journal&rsquo;s role in local crash recovery.' "MongoDB article description"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'How to automate developer support with Claude and MCP' "developer automation article title"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Infobip Developers Hub · 2026' "developer automation publisher and date"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'A look at an AI support system built with Claude and MCP to automate developer-support workflows.' "developer automation description"
@@ -199,6 +202,7 @@ assert_about_content_and_navigation() {
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'ShiftMag · 2023' "database migration publisher and date"
   assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Migrating a 7 TB PostgreSQL database from AWS Aurora to an on-premises vanilla environment.' "database migration description"
   assert_count "${scenario}" "${production_dir}" "${about_page}" "${talk_url}" 1 "one canonical talk destination"
+  assert_count "${scenario}" "${production_dir}" "${about_page}" "${mongodb_url}" 1 "one canonical MongoDB article destination"
   assert_count "${scenario}" "${production_dir}" "${about_page}" "${failover_url}" 1 "one canonical database failover destination"
   assert_count "${scenario}" "${production_dir}" "${about_page}" "${automation_url}" 1 "one canonical developer automation destination"
   assert_count "${scenario}" "${production_dir}" "${about_page}" "${migration_url}" 1 "one canonical database migration destination"
@@ -206,6 +210,7 @@ assert_about_content_and_navigation() {
   assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'rel=canonical href=https://franejelavic.github.io/about/' "legacy URL canonical target"
   assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'http-equiv=refresh content="0; url=https://franejelavic.github.io/about/"' "legacy URL redirect target"
   assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'Understanding the Database' "legacy URL must not duplicate curated content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${mongodb_url}" "legacy URL must not duplicate MongoDB article content"
   assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${failover_url}" "legacy URL must not duplicate database failover article content"
   assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${automation_url}" "legacy URL must not duplicate article content"
   assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${migration_url}" "legacy URL must not duplicate article content"

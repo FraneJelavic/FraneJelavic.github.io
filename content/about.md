@@ -1,11 +1,15 @@
 +++
 title = "About"
-description = "About Frane Jelavic and this site."
+description = "About Frane Jelavić and his work with databases, distributed systems, and production infrastructure."
 showProfileLinks = true
 aliases = ["/elsewhere/"]
 +++
 
-I’m Frane Jelavic. I enjoy learning how complex systems behave in production, particularly around databases, distributed systems, reliability, and performance. This site is where I write down and share what I learn.
+I’m Frane Jelavić, a Principal Engineer at Infobip. I design and operate database-heavy distributed systems, with a focus on high availability, change data capture, reliability, and performance. I work with PostgreSQL, MongoDB, Kafka, Debezium, Go, and Java.
+
+Much of my work begins when production systems stop behaving as expected, including replication failures, slow queries, lagging data pipelines, unreliable failover, or database migrations that must remain online. I enjoy tracing those problems through the database, application, and infrastructure until I understand the mechanism.
+
+This site is where I document what I learn and how I reason about operational decisions. Some pieces remain working notes. Others are published by ShiftMag and the Infobip Developers Hub.
 
 ## Talks and articles
 
@@ -17,6 +21,10 @@ Selected talks and articles published elsewhere.
   DUMP Days · 2023 · Video starts at 5:18:05 (Croatian)
 
 ### Articles
+
+- [MongoDB: One write, two logs](https://shiftmag.dev/mongodb-one-write-two-logs-12267/)\
+  ShiftMag · 2026\
+  Following a write through MongoDB replication and WiredTiger to separate the oplog's role in replication from the journal's role in local crash recovery.
 
 - [How to Survive Database Failover – Debezium and PostgreSQL in Production](https://shiftmag.dev/how-to-survive-database-failover-debezium-and-postgresql-in-production-11676/)\
   ShiftMag · 2026\
