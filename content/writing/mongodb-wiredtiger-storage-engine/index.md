@@ -1,8 +1,8 @@
 +++
-title = 'MongoDB: One write two logs'
-date = '2026-09-09T12:00:00+02:00'
-lastmod = '2026-09-09T12:00:00+02:00'
-draft = true
+title = 'MongoDB: One write, two logs'
+date = '2026-09-24T12:00:00+02:00'
+lastmod = '2026-09-25T12:00:00+02:00'
+draft = false
 description = 'Following a write through MongoDB replication and WiredTiger local durability.'
 categories = ['Databases']
 tags = ['MongoDB', 'WiredTiger', 'Replication', 'Storage Engines']
