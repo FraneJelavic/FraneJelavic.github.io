@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1050" viewBox="0 0 1800 1050" role="img" aria-labelledby="title desc">
+  <title id="title">One MongoDB write, two paths</title>
+  <desc id="desc">A client write reaches a primary member. The document change and oplog entry commit in one WiredTiger transaction. The journal protects local recovery, while a secondary asynchronously copies the oplog entry and applies it through its own WiredTiger storage.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#292524"/>
+    </marker>
+    <style>
+      .label { font-family: "Chalkboard SE", "Comic Sans MS", sans-serif; fill: #292524; }
+      .title { font-size: 40px; font-weight: 700; }
+      .section { font-size: 29px; font-weight: 700; }
+      .box-title { font-size: 27px; font-weight: 700; }
+      .body { font-size: 23px; }
+      .small { font-size: 20px; }
+      .boundary { fill: none; stroke: #292524; stroke-width: 4; stroke-dasharray: 14 11; rx: 28; }
+      .box { stroke: #292524; stroke-width: 3.5; rx: 22; }
+      .arrow { fill: none; stroke: #292524; stroke-width: 4; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+      .async { stroke-dasharray: 13 10; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1050" fill="#fffdf8"/>
+  <text x="900" y="58" text-anchor="middle" class="label title">ONE WRITE, TWO PATHS</text>
+
+  <rect x="45" y="292" width="240" height="94" class="box" fill="#fef3c7"/>
+  <text x="165" y="350" text-anchor="middle" class="label box-title">Client write</text>
+  <path d="M 286 339 C 320 338, 340 336, 373 336" class="arrow"/>
+
+  <rect x="375" y="110" width="830" height="820" class="boundary"/>
+  <text x="790" y="158" text-anchor="middle" class="label section">PRIMARY MEMBER</text>
+
+  <rect x="448" y="208" width="680" height="342" class="box" fill="#dbeafe"/>
+  <text x="788" y="256" text-anchor="middle" class="label box-title">One WiredTiger storage transaction</text>
+
+  <rect x="497" y="307" width="260" height="132" class="box" fill="#eff6ff"/>
+  <text x="627" y="362" text-anchor="middle" class="label body">Document and</text>
+  <text x="627" y="395" text-anchor="middle" class="label body">index changes</text>
+
+  <rect x="820" y="307" width="260" height="132" class="box" fill="#ffedd5"/>
+  <text x="950" y="362" text-anchor="middle" class="label body">Primary oplog</text>
+  <text x="950" y="395" text-anchor="middle" class="label body">entry</text>
+
+  <path d="M 756 462 C 772 478, 802 478, 820 462" fill="none" stroke="#292524" stroke-width="3.5" stroke-linecap="round"/>
+  <text x="788" y="510" text-anchor="middle" class="label body">Committed atomically</text>
+
+  <path d="M 788 550 C 786 587, 786 609, 786 641" class="arrow"/>
+  <rect x="552" y="646" width="472" height="134" class="box" fill="#dcfce7"/>
+  <text x="788" y="700" text-anchor="middle" class="label box-title">WiredTiger journal</text>
+  <text x="788" y="741" text-anchor="middle" class="label body">Local crash recovery</text>
+
+  <rect x="540" y="833" width="496" height="62" rx="18" fill="#f5f5f4" stroke="#78716c" stroke-width="2.5"/>
+  <text x="788" y="872" text-anchor="middle" class="label small">Protects this member, not another server</text>
+
+  <rect x="1270" y="180" width="480" height="750" class="boundary"/>
+  <text x="1510" y="229" text-anchor="middle" class="label section">SECONDARY MEMBER</text>
+
+  <path d="M 1080 373 C 1162 372, 1202 317, 1309 316" class="arrow async"/>
+  <rect x="1066" y="268" width="274" height="48" rx="12" fill="#fffdf8"/>
+  <text x="1203" y="299" text-anchor="middle" class="label small">Asynchronous oplog copy</text>
+
+  <rect x="1320" y="280" width="380" height="105" class="box" fill="#ffedd5"/>
+  <text x="1510" y="326" text-anchor="middle" class="label box-title">local.oplog.rs</text>
+  <text x="1510" y="359" text-anchor="middle" class="label small">Stores the fetched entry</text>
+
+  <path d="M 1510 386 C 1510 410, 1510 425, 1510 448" class="arrow"/>
+  <rect x="1320" y="453" width="380" height="102" class="box" fill="#fef3c7"/>
+  <text x="1510" y="497" text-anchor="middle" class="label box-title">Apply operation</text>
+  <text x="1510" y="530" text-anchor="middle" class="label small">Update local data</text>
+
+  <path d="M 1510 556 C 1510 581, 1510 597, 1510 619" class="arrow"/>
+  <rect x="1320" y="624" width="380" height="207" class="box" fill="#dcfce7"/>
+  <text x="1510" y="670" text-anchor="middle" class="label box-title">Its own WiredTiger</text>
+  <text x="1510" y="719" text-anchor="middle" class="label body">cache and journal</text>
+  <text x="1510" y="756" text-anchor="middle" class="label body">checkpoints</text>
+  <text x="1510" y="793" text-anchor="middle" class="label body">collection and index files</text>
+
+  <text x="1270" y="986" class="label small">Solid arrows: work inside a member</text>
+  <line x1="1210" y1="977" x2="1250" y2="977" stroke="#292524" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="390" y="986" class="label small">Dashed arrow: oplog replication between members</text>
+  <line x1="310" y1="977" x2="370" y2="977" stroke="#292524" stroke-width="4" stroke-dasharray="12 9" marker-end="url(#arrow)"/>
+</svg>
