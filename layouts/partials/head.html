@@ -13,3 +13,6 @@
 {{ end }}
 {{ $styles := resources.Get "css/main.css" | minify | fingerprint "sha384" }}
 <link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}">
+{{ if .HasShortcode "wiredtiger-cache" }}
+  <link rel="stylesheet" href="{{ "animations/wiredtiger-cache/style.css" | relURL }}">
+{{ end }}
