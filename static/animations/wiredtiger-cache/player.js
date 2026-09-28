@@ -137,8 +137,24 @@
         if (current) {
           button.setAttribute("aria-current", "step");
           if (rail) {
-            const left = button.offsetLeft - (rail.clientWidth - button.clientWidth) / 2;
-            rail.scrollTo({ left: Math.max(0, left), behavior: reduced ? "auto" : "smooth" });
+            const max = Math.max(0, rail.scrollWidth - rail.clientWidth);
+            const railRect = rail.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
+            const left = Math.min(
+              max,
+              Math.max(
+                0,
+                rail.scrollLeft + buttonRect.left - railRect.left - (railRect.width - buttonRect.width) / 2,
+              ),
+            );
+            if (max > 0 && Math.abs(rail.scrollLeft - left) >= 1) {
+              const pageX = window.scrollX;
+              const pageY = window.scrollY;
+              rail.scrollTo({ left, behavior: "auto" });
+              if (window.scrollX !== pageX || window.scrollY !== pageY) {
+                window.scrollTo(pageX, pageY);
+              }
+            }
           }
         } else {
           button.removeAttribute("aria-current");

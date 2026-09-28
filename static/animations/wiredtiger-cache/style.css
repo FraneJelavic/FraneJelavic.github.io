@@ -15,6 +15,8 @@
   --wt-warn-bg: #f8ebcf;
   --wt-focus: var(--focus);
 
+  max-width: 100%;
+  min-width: 0;
   margin: 1.5rem 0;
   padding: 0.85rem;
   border: 1px solid var(--wt-line);
@@ -119,9 +121,14 @@
 .wt-cache__rail {
   display: flex;
   gap: 0.3rem;
+  max-width: 100%;
+  min-width: 0;
   margin-bottom: 0.85rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   padding-bottom: 0.15rem;
+  scroll-behavior: auto;
 }
 
 .wt-cache__rail button {
