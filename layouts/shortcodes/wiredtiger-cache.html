@@ -1,23 +1,24 @@
-{{- $autoplay := .Get "autoplay" | default "true" -}}
-{{- $start := .Get "start" | default "idle" -}}
-{{- $known := slice "idle" "mongod" "cache" "dirty" "fork" "checkpoint" "eviction" "pressure" "files" "done" -}}
+{{- $autoplay := .Get "autoplay" | default "false" -}}
+{{- $start := .Get "start" | default "write" -}}
+{{- $known := slice "write" "dirty" "journal" "target" "endings" "threads" "limit" -}}
 {{- if not (in $known $start) -}}
-  {{- $start = "idle" -}}
+  {{- $start = "write" -}}
 {{- end -}}
 {{- if not (in (slice "true" "false") $autoplay) -}}
-  {{- $autoplay = "true" -}}
+  {{- $autoplay = "false" -}}
 {{- end -}}
 <figure
   class="wt-cache"
-  data-phase="done"
+  data-phase="write"
+  data-focus="mongod"
   data-autoplay="{{ $autoplay }}"
   data-start="{{ $start }}"
-  style="--wt-dirty-pct: 8"
+  style="--wt-dirty-pct: 4"
   tabindex="0"
-  aria-label="WiredTiger cache write path. A collection write and a local.oplog.rs entry become dirty cache pages, then reach collection and index files by checkpoint or by eviction."
+  aria-label="WiredTiger cache lesson. One write becomes dirty pages, the journal records it before the table files change, and checkpoint and eviction are two endings for the same page."
 >
   <div class="wt-cache__bar">
-    <p class="wt-cache__kicker" data-wt-kicker>Complete</p>
+    <p class="wt-cache__kicker" data-wt-kicker>1 · The write</p>
     <div class="wt-cache__controls" role="group" aria-label="Animation controls">
       <button type="button" data-wt-action="prev" aria-label="Previous step">Prev</button>
       <button type="button" data-wt-action="play" aria-label="Play" aria-pressed="false">Play</button>
@@ -27,20 +28,19 @@
   </div>
 
   <div class="wt-cache__rail" role="group" aria-label="Animation steps">
-    <button type="button" data-wt-goto="idle">Ready</button>
-    <button type="button" data-wt-goto="mongod">1 · mongod</button>
-    <button type="button" data-wt-goto="cache">2 · Cache</button>
-    <button type="button" data-wt-goto="dirty">3 · Dirty</button>
-    <button type="button" data-wt-goto="fork">4 · Two paths</button>
-    <button type="button" data-wt-goto="checkpoint">5 · Checkpoint</button>
-    <button type="button" data-wt-goto="eviction">6 · Past 20%</button>
-    <button type="button" data-wt-goto="pressure">7 · App threads</button>
-    <button type="button" data-wt-goto="files">8 · On disk</button>
-    <button type="button" data-wt-goto="done" aria-current="step">Complete</button>
+    <button type="button" data-wt-goto="write" aria-current="step">1 · Write</button>
+    <button type="button" data-wt-goto="dirty">2 · Dirty</button>
+    <button type="button" data-wt-goto="journal">3 · Journal</button>
+    <button type="button" data-wt-goto="target">4 · Past 5%</button>
+    <button type="button" data-wt-goto="endings">5 · Two endings</button>
+    <button type="button" data-wt-goto="threads">6 · Past 20%</button>
+    <button type="button" data-wt-goto="limit">7 · The limit</button>
   </div>
 
+  <p class="wt-sentence" data-wt-outcome>One client write becomes a collection change and an oplog entry.</p>
+
   <div class="wt-cache__stage">
-    <section class="wt-zone wt-zone--mongod" aria-label="mongod">
+    <section class="wt-zone wt-zone--mongod" data-layer="mongod" aria-label="mongod">
       <header class="wt-zone__head">
         <h3>mongod</h3>
         <p>application</p>
@@ -60,19 +60,23 @@
         </div>
       </div>
       <p class="wt-txn">one storage transaction</p>
-      <p class="wt-latency">write latency · stall</p>
     </section>
 
-    <div class="wt-link wt-link--into" aria-hidden="true">
+    <div class="wt-link wt-link--into" data-from="dirty" hidden aria-hidden="true">
       <span class="wt-link__track"><span class="wt-link__packet"></span></span>
       <span class="wt-link__label">into the WiredTiger cache</span>
     </div>
 
-    <section class="wt-zone wt-zone--cache" aria-label="WiredTiger cache">
+    <section class="wt-zone wt-zone--cache" data-layer="cache" data-from="dirty" hidden aria-label="WiredTiger cache">
       <header class="wt-zone__head">
         <h3>WiredTiger cache</h3>
         <p>in memory</p>
       </header>
+
+      <div class="wt-burst" data-from="target" hidden aria-hidden="true">
+        <span class="wt-burst__label">more writes</span>
+        <i></i><i></i><i></i><i></i>
+      </div>
 
       <div
         class="wt-meter"
@@ -80,12 +84,12 @@
         role="meter"
         aria-valuemin="0"
         aria-valuemax="100"
-        aria-valuenow="8"
+        aria-valuenow="4"
         aria-label="Dirty share of the WiredTiger cache"
       >
         <div class="wt-meter__labels">
           <span>dirty share of cache</span>
-          <span class="wt-meter__readout" data-wt-dirty-readout>8%</span>
+          <span class="wt-meter__readout" data-wt-dirty-readout>4%</span>
         </div>
         <div class="wt-meter__scale">
           <div class="wt-meter__track">
@@ -103,83 +107,60 @@
       <div class="wt-pages">
         <div class="wt-page">
           <span class="wt-page__name">collection</span>
-          <span class="wt-page__state wt-page__state--wait">waiting</span>
-          <span class="wt-page__state wt-page__state--cached">in cache</span>
-          <span class="wt-page__state wt-page__state--dirty">dirty</span>
-          <span class="wt-page__state wt-page__state--clean">clean</span>
-          <span class="wt-page__state wt-page__state--evict">evicting</span>
-          <span class="wt-page__state wt-page__state--disk">reconciled</span>
+          <span class="wt-page__state">dirty</span>
         </div>
         <div class="wt-page">
           <span class="wt-page__name">index</span>
-          <span class="wt-page__state wt-page__state--wait">waiting</span>
-          <span class="wt-page__state wt-page__state--cached">in cache</span>
-          <span class="wt-page__state wt-page__state--dirty">dirty</span>
-          <span class="wt-page__state wt-page__state--clean">clean</span>
-          <span class="wt-page__state wt-page__state--evict">evicting</span>
-          <span class="wt-page__state wt-page__state--disk">reconciled</span>
+          <span class="wt-page__state">dirty</span>
         </div>
         <div class="wt-page">
           <span class="wt-page__name">oplog</span>
-          <span class="wt-page__state wt-page__state--wait">waiting</span>
-          <span class="wt-page__state wt-page__state--cached">in cache</span>
-          <span class="wt-page__state wt-page__state--dirty">dirty</span>
-          <span class="wt-page__state wt-page__state--clean">clean</span>
-          <span class="wt-page__state wt-page__state--evict">evicting</span>
-          <span class="wt-page__state wt-page__state--disk">reconciled</span>
+          <span class="wt-page__state">dirty</span>
         </div>
       </div>
-      <p class="wt-outcome" data-wt-outcome>Checkpoint keeps a clean page. Eviction removes it after the write.</p>
 
-      <div class="wt-paths">
-        <div class="wt-path wt-path--checkpoint">
-          <span class="wt-path__name">Checkpoint</span>
-          <span class="wt-path__detail">timer thread writes the files, pages stay clean</span>
-        </div>
-        <div class="wt-path wt-path--evict">
-          <span class="wt-path__name">Eviction</span>
-          <span class="wt-path__detail">past 20% dirty, write the files, then remove the pages</span>
-          <span class="wt-workers">
-            <span class="wt-workers__label">default workers</span>
-            <span class="wt-worker">1</span>
-            <span class="wt-worker">2</span>
-            <span class="wt-worker">3</span>
-            <span class="wt-worker">4</span>
-          </span>
-          <span class="wt-appthreads">application threads join</span>
-        </div>
+      <div class="wt-workers" data-from="target" hidden>
+        <span class="wt-workers__label">default workers</span>
+        <span class="wt-worker">1</span>
+        <span class="wt-worker">2</span>
+        <span class="wt-worker">3</span>
+        <span class="wt-worker">4</span>
       </div>
     </section>
 
-    <div class="wt-link wt-link--out" aria-hidden="true">
+    <div class="wt-link wt-link--out" data-from="journal" hidden aria-hidden="true">
       <span class="wt-link__track"><span class="wt-link__packet"></span></span>
-      <span class="wt-link__routes">
-        <span class="wt-route wt-route--checkpoint">checkpoint write</span>
-        <span class="wt-route wt-route--evict">eviction write</span>
+      <span class="wt-link__copy">
+        <span class="wt-link__label">down to dbPath</span>
+        <span class="wt-link__routes" data-from="endings" hidden>
+          <span class="wt-route wt-route--checkpoint">checkpoint write</span>
+          <span class="wt-route wt-route--evict">eviction write</span>
+        </span>
       </span>
     </div>
 
-    <section class="wt-zone wt-zone--disk" aria-label="Data directory">
+    <section class="wt-zone wt-zone--disk" data-layer="disk" data-from="journal" hidden aria-label="Data directory">
       <header class="wt-zone__head">
         <h3>dbPath</h3>
-        <p>table files</p>
+        <p>journal, then table files</p>
       </header>
+      <p class="wt-journal">
+        <span class="wt-journal__dot" aria-hidden="true"></span>
+        <span class="wt-journal__name">journal/</span>
+        <span class="wt-journal__flag">record landed</span>
+      </p>
       <div class="wt-files">
         <div class="wt-filegroup">
           <p class="wt-filegroup__name">user collection</p>
           <div class="wt-file">
             <span class="wt-file__name">collection-*.wt</span>
             <span class="wt-file__flag wt-file__flag--quiet">unchanged</span>
-            <span class="wt-file__flag wt-file__flag--checkpoint">checkpoint</span>
-            <span class="wt-file__flag wt-file__flag--evict">eviction</span>
-            <span class="wt-file__flag wt-file__flag--done">reconciled</span>
+            <span class="wt-file__flag wt-file__flag--written">written</span>
           </div>
           <div class="wt-file">
             <span class="wt-file__name">index-*.wt</span>
             <span class="wt-file__flag wt-file__flag--quiet">unchanged</span>
-            <span class="wt-file__flag wt-file__flag--checkpoint">checkpoint</span>
-            <span class="wt-file__flag wt-file__flag--evict">eviction</span>
-            <span class="wt-file__flag wt-file__flag--done">reconciled</span>
+            <span class="wt-file__flag wt-file__flag--written">written</span>
           </div>
         </div>
         <div class="wt-filegroup">
@@ -187,33 +168,77 @@
           <div class="wt-file">
             <span class="wt-file__name">collection-*.wt</span>
             <span class="wt-file__flag wt-file__flag--quiet">unchanged</span>
-            <span class="wt-file__flag wt-file__flag--checkpoint">checkpoint</span>
-            <span class="wt-file__flag wt-file__flag--evict">eviction</span>
-            <span class="wt-file__flag wt-file__flag--done">reconciled</span>
+            <span class="wt-file__flag wt-file__flag--written">written</span>
           </div>
           <div class="wt-file">
             <span class="wt-file__name">index-*.wt</span>
             <span class="wt-file__flag wt-file__flag--quiet">unchanged</span>
-            <span class="wt-file__flag wt-file__flag--checkpoint">checkpoint</span>
-            <span class="wt-file__flag wt-file__flag--evict">eviction</span>
-            <span class="wt-file__flag wt-file__flag--done">reconciled</span>
+            <span class="wt-file__flag wt-file__flag--written">written</span>
           </div>
         </div>
       </div>
-      <p class="wt-journal">journal/ records recovery between checkpoints. It does not fill these table files.</p>
     </section>
+
+    <div class="wt-endings" data-layer="endings" data-from="endings" hidden>
+      <article class="wt-ending wt-ending--checkpoint" aria-label="Checkpoint ending">
+        <h3>Checkpoint</h3>
+        <p class="wt-ending__claim">The page stays in cache, now clean.</p>
+        <div class="wt-page">
+          <span class="wt-page__name">collection</span>
+          <span class="wt-page__state">clean, still cached</span>
+        </div>
+        <div class="wt-file">
+          <span class="wt-file__name">collection-*.wt</span>
+          <span class="wt-file__flag">written</span>
+        </div>
+      </article>
+      <article class="wt-ending wt-ending--evict" aria-label="Eviction ending">
+        <h3>Eviction</h3>
+        <p class="wt-ending__claim">The page is written, then the slot is freed.</p>
+        <div class="wt-ending__pages">
+          <div class="wt-page wt-page--gone">
+            <span class="wt-page__name">collection</span>
+            <span class="wt-page__state">removed</span>
+          </div>
+          <div class="wt-page wt-page--gone">
+            <span class="wt-page__name">index</span>
+            <span class="wt-page__state">removed</span>
+          </div>
+          <div class="wt-page wt-page--pinned">
+            <span class="wt-page__name">oplog</span>
+            <span class="wt-page__state">pinned, skipped</span>
+          </div>
+        </div>
+        <p class="wt-stall" data-from="threads" hidden>application threads join, and the client stalls</p>
+        <div class="wt-file">
+          <span class="wt-file__name">collection-*.wt</span>
+          <span class="wt-file__flag">written</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="wt-limits" data-layer="limits" data-from="limit" hidden>
+      <article class="wt-limit wt-limit--disk" aria-label="Disk is the limit">
+        <h3>Disk saturated</h3>
+        <p>Extra eviction threads wait on the same IO.</p>
+      </article>
+      <article class="wt-limit wt-limit--workers" aria-label="Workers are the limit">
+        <h3>Workers saturated</h3>
+        <p>Extra threads help when the disk can take more writes.</p>
+      </article>
+    </div>
   </div>
 
-  <p class="wt-cache__caption" data-wt-caption aria-live="polite">The collection write and the local.oplog.rs entry become dirty cache pages. Checkpoint can write them and leave them resident. Past about 20% dirty, the four eviction workers and then application threads write them out to free the cache, and client operations pay in latency. Extra eviction threads help only when the workers, not the disk, are the limit.</p>
+  <p class="wt-cache__caption" data-wt-caption aria-live="polite">mongod applies both in one storage transaction. Nothing has entered the cache yet.</p>
 
   <figcaption class="wt-cache__legend">
     <ul>
       <li><i class="wt-swatch wt-swatch--dirty" aria-hidden="true"></i> Dirty, not reconciled</li>
       <li><i class="wt-swatch wt-swatch--clean" aria-hidden="true"></i> Clean, still cached</li>
-      <li><i class="wt-swatch wt-swatch--evict" aria-hidden="true"></i> Evicting: write, then remove</li>
+      <li><i class="wt-swatch wt-swatch--evict" aria-hidden="true"></i> Pinned, skipped</li>
       <li><i class="wt-swatch wt-swatch--file" aria-hidden="true"></i> Reconciled table file</li>
     </ul>
-    <p>Left and right step through the figure. Space plays or pauses while the figure is focused.</p>
+    <p>Next moves one step. Space plays or pauses while the figure is focused.</p>
   </figcaption>
 </figure>
 <script src="{{ "animations/wiredtiger-cache/player.js" | relURL }}"></script>

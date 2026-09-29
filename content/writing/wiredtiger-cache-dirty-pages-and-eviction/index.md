@@ -10,6 +10,6 @@ toc = false
 socialImage = ''
 +++
 
-> **Placeholder.** The article is not written yet. This draft holds the figure the post will teach from: a collection write and a `local.oplog.rs` entry enter the WiredTiger cache as dirty pages, then reach `collection-*.wt` and `index-*.wt` by checkpoint or, past about 20% dirty, by eviction.
+> **Placeholder.** The article is not written yet. The figure follows one write into dirty cache pages, shows the journal recording it while the table files stay unchanged, then holds checkpoint and eviction side by side. The dirty meter crosses 5%, then 20%.
 
 {{< wiredtiger-cache >}}

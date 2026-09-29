@@ -1,83 +1,66 @@
 (() => {
   const PHASES = [
     {
-      id: "idle",
-      title: "Ready",
-      outcome: "Table files stay quiet until a page is reconciled.",
-      body: "A write is about to land on mongod. The collection and index files are not updated yet.",
-      dirty: 3,
-      durationMs: 2800,
-    },
-    {
-      id: "mongod",
-      title: "1 · mongod",
-      outcome: "The collection change and the oplog entry are paired on mongod.",
-      body: "mongod applies the collection write and creates the matching entry in local.oplog.rs. Both belong to one storage transaction.",
-      dirty: 3,
-      durationMs: 3800,
-    },
-    {
-      id: "cache",
-      title: "2 · Into cache",
-      outcome: "Collection, index, and oplog pages now sit in cache.",
-      body: "WiredTiger applies the collection change, the index update, and the oplog entry to in-memory B-tree pages.",
-      dirty: 6,
-      durationMs: 3600,
+      id: "write",
+      focus: "mongod",
+      title: "1 · The write",
+      outcome: "One client write becomes a collection change and an oplog entry.",
+      body: "mongod applies both in one storage transaction. Nothing has entered the cache yet.",
+      dirty: 4,
+      durationMs: 6500,
     },
     {
       id: "dirty",
-      title: "3 · Dirty pages",
-      outcome: "Modified, not reconciled. Cannot be dropped yet.",
-      body: "Dirty means the page is modified in cache and not yet reconciled into its table file. It cannot be discarded until that write happens.",
-      dirty: 12,
-      durationMs: 4000,
-    },
-    {
-      id: "fork",
-      title: "4 · Two paths",
-      outcome: "Two writers. Only eviction removes the page.",
-      body: "Checkpoint writes table files on its timer. Eviction writes them when dirty cache has to be freed. The 5% mark is the background target. The 20% mark is where application threads join.",
-      dirty: 12,
-      durationMs: 4200,
-    },
-    {
-      id: "checkpoint",
-      title: "5 · Checkpoint",
-      outcome: "Written by checkpoint. Still resident, now clean.",
-      body: "Checkpoint reconciles a consistent snapshot into collection-*.wt and index-*.wt, including the oplog tables. The pages stay in cache and become clean.",
+      focus: "cache",
+      title: "2 · Dirty pages",
+      outcome: "The write is a dirty page in cache. It cannot be dropped yet.",
+      body: "WiredTiger updates the collection page, the index page, and the oplog page in memory. Dirty means modified and not yet reconciled into the table file. One write leaves the dirty share near 4%, under the 5% target.",
       dirty: 4,
-      durationMs: 4600,
+      durationMs: 7000,
     },
     {
-      id: "eviction",
+      id: "journal",
+      focus: "disk",
+      title: "3 · Journal",
+      outcome: "The journal records the write. The table files stay unchanged.",
+      body: "journal/ holds the durability record between checkpoints. It does not fill collection-*.wt or index-*.wt.",
+      dirty: 4,
+      durationMs: 6500,
+    },
+    {
+      id: "target",
+      focus: "cache",
+      title: "4 · Past 5%",
+      outcome: "Background eviction starts. Application threads stay out.",
+      body: "More writes push the dirty share past the 5% target. The default four eviction workers reconcile pages. Request threads do not help at this mark.",
+      dirty: 8,
+      durationMs: 7000,
+    },
+    {
+      id: "endings",
+      focus: "endings",
+      title: "5 · Two endings",
+      outcome: "Checkpoint leaves the page in cache. Eviction removes it after the write.",
+      body: "Both writers reconcile into the table files. Checkpoint keeps the page and marks it clean. Eviction frees the slot. A page pinned by an open operation stays dirty until that operation lets go.",
+      dirty: 8,
+      durationMs: 8000,
+    },
+    {
+      id: "threads",
+      focus: "threads",
       title: "6 · Past 20%",
-      outcome: "Four workers write the page, then evict it.",
-      body: "When later writes push the dirty share past about 20%, the default four eviction workers reconcile dirty pages and then remove them. A page pinned by an active operation is skipped until it is free.",
+      outcome: "Request threads join the four workers, and the client stalls.",
+      body: "Later writes push the dirty share past about 20%. Application threads spend their time on eviction IO, so operations on the primary wait. The pinned page is still skipped.",
       dirty: 27,
-      durationMs: 4800,
+      durationMs: 7500,
     },
     {
-      id: "pressure",
-      title: "7 · Application threads",
-      outcome: "Request threads are helping eviction.",
-      body: "Application threads join those four workers to free the cache. The time is spent on eviction IO, so operations on the primary see latency and stall.",
+      id: "limit",
+      focus: "limits",
+      title: "7 · The limit",
+      outcome: "More eviction threads help only when the workers are the limit.",
+      body: "If the disk is saturated, extra threads wait on the same IO. If the four workers are busy and the disk can take more writes, extra threads help.",
       dirty: 27,
-      durationMs: 4800,
-    },
-    {
-      id: "files",
-      title: "8 · On disk",
-      outcome: "Oplog and user data use the same kind of table file.",
-      body: "Reconciled images land in collection-*.wt and index-*.wt for the user collection and for local.oplog.rs. The journal records durability between checkpoints. It does not populate these table files.",
-      dirty: 8,
-      durationMs: 4400,
-    },
-    {
-      id: "done",
-      title: "Complete",
-      outcome: "Checkpoint keeps a clean page. Eviction removes it after the write.",
-      body: "The collection write and the local.oplog.rs entry become dirty cache pages. Checkpoint can write them and leave them resident. Past about 20% dirty, the four eviction workers and then application threads write them out to free the cache, and client operations pay in latency. Extra eviction threads help only when the workers, not the disk, are the limit.",
-      dirty: 8,
       durationMs: 0,
     },
   ];
@@ -101,21 +84,22 @@
     let playing = false;
     let timer = 0;
 
-    if (reduced) {
-      index = PHASES.length - 1;
-    } else {
-      const startId = root.dataset.start || "idle";
-      const found = PHASES.findIndex((phase) => phase.id === startId);
-      index = found >= 0 ? found : 0;
-      playing = root.dataset.autoplay !== "false";
-    }
+    const startId = root.dataset.start || "write";
+    const found = PHASES.findIndex((phase) => phase.id === startId);
+    index = found >= 0 ? found : 0;
+    playing = !reduced && root.dataset.autoplay === "true";
 
     const current = () => PHASES[index];
 
     const render = () => {
       const phase = current();
       root.dataset.phase = phase.id;
+      root.dataset.focus = phase.focus;
       root.style.setProperty("--wt-dirty-pct", String(phase.dirty));
+      root.querySelectorAll("[data-from]").forEach((node) => {
+        const fromIndex = PHASES.findIndex((item) => item.id === node.dataset.from);
+        node.hidden = fromIndex < 0 || fromIndex > index;
+      });
       if (kicker) {
         kicker.textContent = phase.title;
       }
@@ -130,6 +114,10 @@
       }
       if (meter) {
         meter.setAttribute("aria-valuenow", String(phase.dirty));
+      }
+      const fill = root.querySelector(".wt-meter__fill");
+      if (fill) {
+        fill.style.width = `${phase.dirty}%`;
       }
       const rail = root.querySelector(".wt-cache__rail");
       railButtons.forEach((button) => {
@@ -239,7 +227,7 @@
           }
         } else if (action === "restart") {
           index = 0;
-          playing = !reduced;
+          playing = !reduced && root.dataset.autoplay === "true";
           render();
           schedule();
         }
