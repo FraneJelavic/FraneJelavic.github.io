@@ -1,0 +1,130 @@
+{{- $autoplay := .Get "autoplay" | default "false" -}}
+{{- $start := .Get "start" | default "write" -}}
+{{- $known := slice "write" "pair" "commit" "journal" "local" "copy" "apply" -}}
+{{- if not (in $known $start) -}}
+  {{- $start = "write" -}}
+{{- end -}}
+{{- if not (in (slice "true" "false") $autoplay) -}}
+  {{- $autoplay = "false" -}}
+{{- end -}}
+<figure
+  class="wt-write"
+  data-phase="write"
+  data-focus="client"
+  data-autoplay="{{ $autoplay }}"
+  data-start="{{ $start }}"
+  tabindex="0"
+  aria-label="One write, two logs. The primary commits a data change and an oplog entry together. The journal keeps that commit on this member. A secondary copies the oplog entry and applies it through its own WiredTiger."
+>
+  <div class="wt-write__bar">
+    <p class="wt-write__kicker" data-ww-kicker>1 · The write</p>
+    <div class="wt-write__controls" role="group" aria-label="Animation controls">
+      <button type="button" data-ww-action="prev" aria-label="Previous step">Prev</button>
+      <button type="button" data-ww-action="play" aria-label="Play" aria-pressed="false">Play</button>
+      <button type="button" data-ww-action="next" aria-label="Next step">Next</button>
+      <button type="button" data-ww-action="restart" aria-label="Restart animation">Restart</button>
+    </div>
+  </div>
+
+  <div class="wt-write__rail" role="group" aria-label="Animation steps">
+    <button type="button" data-ww-goto="write" aria-current="step">1 · Write</button>
+    <button type="button" data-ww-goto="pair">2 · Two records</button>
+    <button type="button" data-ww-goto="commit">3 · Commit</button>
+    <button type="button" data-ww-goto="journal">4 · Journal</button>
+    <button type="button" data-ww-goto="local">5 · This member</button>
+    <button type="button" data-ww-goto="copy">6 · Oplog copy</button>
+    <button type="button" data-ww-goto="apply">7 · Secondary</button>
+  </div>
+
+  <p class="ww-sentence" data-ww-outcome>A client write reaches the primary member.</p>
+
+  <div class="wt-write__stage">
+    <div class="ww-client" data-layer="client">
+      <span class="ww-packet" aria-hidden="true"></span>
+      <span>client write</span>
+    </div>
+
+    <div class="ww-link" aria-hidden="true">
+      <span class="ww-link__track"><span class="ww-link__packet"></span></span>
+      <span class="ww-link__label">to the primary</span>
+    </div>
+
+    <div class="ww-members">
+      <section class="ww-zone ww-zone--primary" aria-label="Primary member">
+        <header class="ww-zone__head">
+          <h3>Primary member</h3>
+          <p>mongod and WiredTiger</p>
+        </header>
+
+        <div class="ww-pair">
+          <article class="ww-card ww-card--data" data-layer="data" aria-label="Document and index changes">
+            <span class="ww-card__name">document and index</span>
+            <span class="ww-card__detail">collection and index changes</span>
+          </article>
+          <article class="ww-card ww-card--oplog" data-layer="oplog" aria-label="Primary oplog entry">
+            <span class="ww-card__name">oplog entry</span>
+            <span class="ww-card__detail">local.oplog.rs</span>
+          </article>
+        </div>
+
+        <p class="ww-txn" data-layer="commit">one storage transaction</p>
+
+        <div class="ww-journal" data-from="journal" data-layer="journal" hidden>
+          <span class="ww-journal__dot" aria-hidden="true"></span>
+          <span class="ww-journal__name">journal/</span>
+          <span class="ww-journal__flag">record landed</span>
+        </div>
+
+        <p class="ww-files" data-from="journal" data-layer="journal" hidden>collection-*.wt and index-*.wt can stay unchanged</p>
+
+        <p class="ww-local" data-from="local" data-layer="local" hidden>Protects this member. The journal is not copied.</p>
+      </section>
+
+      <div class="ww-bridge" data-from="copy" data-layer="copy" hidden aria-hidden="true">
+        <span class="ww-bridge__track"><span class="ww-bridge__packet"></span></span>
+        <span class="ww-bridge__label">async oplog copy</span>
+      </div>
+
+      <section class="ww-zone ww-zone--secondary" data-from="copy" hidden aria-label="Secondary member">
+        <header class="ww-zone__head">
+          <h3>Secondary member</h3>
+          <p>its own mongod</p>
+        </header>
+
+        <article class="ww-card ww-card--oplog" data-layer="oplog-in" aria-label="Secondary oplog">
+          <span class="ww-card__name">local.oplog.rs</span>
+          <span class="ww-card__detail">fetched entry stored</span>
+        </article>
+
+        <div data-from="apply" hidden>
+          <article class="ww-card ww-card--apply" data-layer="apply" aria-label="Apply operation">
+            <span class="ww-card__name">apply</span>
+            <span class="ww-card__detail">replay the operation on this member</span>
+          </article>
+          <div class="ww-engine" data-layer="engine" aria-label="Secondary WiredTiger">
+            <p class="ww-engine__label">its own WiredTiger</p>
+            <ul>
+              <li>cache</li>
+              <li>journal</li>
+              <li>checkpoints</li>
+              <li>collection and index files</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <p class="wt-write__caption" data-ww-caption aria-live="polite">The router has already chosen the shard. Nothing is committed yet.</p>
+
+  <figcaption class="wt-write__legend">
+    <ul>
+      <li><i class="ww-swatch ww-swatch--data" aria-hidden="true"></i> Data change</li>
+      <li><i class="ww-swatch ww-swatch--oplog" aria-hidden="true"></i> Oplog entry</li>
+      <li><i class="ww-swatch ww-swatch--journal" aria-hidden="true"></i> Journal, this member</li>
+      <li><i class="ww-swatch ww-swatch--copy" aria-hidden="true"></i> Copy between members</li>
+    </ul>
+    <p>Next moves one step. Space plays or pauses while the figure is focused.</p>
+  </figcaption>
+</figure>
+<script src="{{ "animations/wiredtiger-write/player.js" | relURL }}"></script>

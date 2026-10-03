@@ -1,0 +1,621 @@
+.wt-write {
+  --ww-ink: var(--text);
+  --ww-muted: var(--muted);
+  --ww-line: var(--border);
+  --ww-surface: var(--surface);
+  --ww-paper: var(--background);
+  --ww-track: var(--code-background);
+  --ww-leaf: var(--accent-strong);
+  --ww-leaf-bg: #e7f4f0;
+  --ww-data: #1d5c84;
+  --ww-data-bg: #dceaf3;
+  --ww-oplog: #9a4318;
+  --ww-oplog-bg: #f6e4d6;
+  --ww-warn: #8a4b08;
+  --ww-warn-bg: #f8ebcf;
+  --ww-focus: var(--focus);
+
+  max-width: 100%;
+  min-width: 0;
+  margin: 1.5rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ww-line);
+  border-radius: 0.35rem;
+  background: var(--ww-surface);
+  color: var(--ww-ink);
+  font-family: var(--font-sans);
+  line-height: 1.45;
+}
+
+:root[data-theme="dark"] .wt-write {
+  --ww-leaf-bg: #17332e;
+  --ww-data: #9fd0ea;
+  --ww-data-bg: #173244;
+  --ww-oplog: #f0a36e;
+  --ww-oplog-bg: #3a261c;
+  --ww-warn: #f0c27a;
+  --ww-warn-bg: #3a2c18;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .wt-write {
+    --ww-leaf-bg: #17332e;
+    --ww-data: #9fd0ea;
+    --ww-data-bg: #173244;
+    --ww-oplog: #f0a36e;
+    --ww-oplog-bg: #3a261c;
+    --ww-warn: #f0c27a;
+    --ww-warn-bg: #3a2c18;
+  }
+}
+
+.wt-write [hidden] {
+  display: none !important;
+}
+
+.prose .wt-write p,
+.prose .wt-write ul,
+.wt-write p,
+.wt-write ul {
+  margin: 0;
+}
+
+.wt-write h3 {
+  margin: 0;
+  color: var(--ww-ink);
+  font-size: 0.98rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.wt-write button {
+  margin: 0;
+  border: 1px solid var(--ww-line);
+  border-radius: 0.25rem;
+  background: var(--ww-surface);
+  color: var(--ww-muted);
+  font: 650 0.75rem/1.2 var(--font-sans);
+  cursor: pointer;
+}
+
+.wt-write button:hover {
+  border-color: var(--ww-leaf);
+  color: var(--ww-ink);
+}
+
+.wt-write button[aria-current="step"] {
+  border-color: var(--ww-leaf);
+  background: var(--ww-leaf-bg);
+  color: var(--ww-ink);
+}
+
+.wt-write__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.wt-write__kicker {
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.wt-write__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.wt-write__controls button {
+  min-height: 2.4rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.wt-write__rail {
+  display: flex;
+  gap: 0.3rem;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 0.85rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.15rem;
+  scroll-behavior: auto;
+}
+
+.wt-write__rail button {
+  flex: 0 0 auto;
+  min-height: 2.15rem;
+  padding: 0.3rem 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.prose .wt-write .ww-sentence,
+.wt-write .ww-sentence {
+  margin: 0 0 0.8rem;
+  color: var(--ww-ink);
+  font-size: 1.02rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.wt-write__stage {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ww-client {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--ww-line);
+  border-radius: 0.25rem;
+  color: var(--ww-muted);
+  font-size: 0.8rem;
+}
+
+.ww-packet {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ww-leaf);
+}
+
+.ww-link,
+.ww-bridge {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.45rem;
+  align-items: center;
+  min-height: 1.7rem;
+  color: var(--ww-muted);
+}
+
+.ww-link__track,
+.ww-bridge__track {
+  position: relative;
+  width: 1px;
+  height: 1.35rem;
+  justify-self: center;
+  background: var(--ww-line);
+}
+
+.ww-bridge__track {
+  background: transparent;
+  border-left: 1px dashed var(--ww-oplog);
+}
+
+.ww-link__packet,
+.ww-bridge__packet {
+  position: absolute;
+  left: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--ww-leaf);
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+.ww-bridge__packet {
+  background: var(--ww-oplog);
+}
+
+.ww-link__label,
+.ww-bridge__label,
+.ww-zone__head p,
+.ww-card__detail,
+.ww-files,
+.ww-engine__label,
+.ww-txn,
+.wt-write__legend {
+  color: var(--ww-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.ww-members {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ww-zone {
+  min-width: 0;
+  padding: 0.75rem 0.8rem 0.85rem;
+  border: 1px solid var(--ww-line);
+  border-radius: 0.3rem;
+  background: var(--ww-paper);
+}
+
+.ww-zone__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.ww-pair {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ww-card {
+  min-width: 0;
+  padding: 0.5rem 0.55rem;
+  border: 1px dashed var(--ww-line);
+  border-radius: 0.25rem;
+  background: var(--ww-surface);
+}
+
+.ww-card__name {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.ww-card__detail {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.prose .wt-write .ww-txn,
+.prose .wt-write .ww-files,
+.prose .wt-write .ww-local,
+.prose .wt-write .ww-journal,
+.wt-write .ww-txn,
+.wt-write .ww-files,
+.wt-write .ww-local,
+.wt-write .ww-journal {
+  margin-top: 0.55rem;
+}
+
+.ww-txn,
+.ww-journal,
+.ww-local {
+  padding: 0.4rem 0.55rem;
+  border: 1px dashed var(--ww-line);
+  border-radius: 0.25rem;
+}
+
+.ww-journal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  border-style: solid;
+  border-color: var(--ww-leaf);
+  background: var(--ww-leaf-bg);
+  color: var(--ww-ink);
+}
+
+.ww-journal__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ww-leaf);
+}
+
+.ww-journal__name {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.ww-journal__flag,
+.ww-local {
+  color: var(--ww-ink);
+}
+
+.ww-local {
+  border-style: solid;
+  border-color: var(--ww-warn);
+  background: var(--ww-warn-bg);
+  color: var(--ww-warn);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ww-card--apply {
+  margin-top: 0.45rem;
+  border-style: solid;
+  border-color: var(--ww-data);
+  background: var(--ww-data-bg);
+  color: var(--ww-data);
+}
+
+.ww-engine {
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.6rem 0.65rem;
+  border: 1px solid var(--ww-leaf);
+  border-radius: 0.25rem;
+  background: var(--ww-leaf-bg);
+}
+
+.prose .wt-write .ww-engine__label,
+.wt-write .ww-engine__label {
+  margin-bottom: 0.35rem;
+  color: var(--ww-ink);
+  font-weight: 700;
+}
+
+.ww-engine ul {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-engine li {
+  color: var(--ww-ink);
+  font-size: 0.84rem;
+}
+
+.ww-engine li::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--ww-leaf);
+  vertical-align: 0.05rem;
+}
+
+.wt-write [data-layer] {
+  opacity: 0.42;
+}
+
+.wt-write[data-focus="client"] [data-layer="client"],
+.wt-write[data-focus="pair"] [data-layer="data"],
+.wt-write[data-focus="pair"] [data-layer="oplog"],
+.wt-write[data-focus="commit"] [data-layer="data"],
+.wt-write[data-focus="commit"] [data-layer="oplog"],
+.wt-write[data-focus="commit"] [data-layer="commit"],
+.wt-write[data-focus="journal"] [data-layer="journal"],
+.wt-write[data-focus="local"] [data-layer="journal"],
+.wt-write[data-focus="local"] [data-layer="local"],
+.wt-write[data-focus="local"] [data-layer="oplog"],
+.wt-write[data-focus="copy"] [data-layer="oplog"],
+.wt-write[data-focus="copy"] [data-layer="copy"],
+.wt-write[data-focus="copy"] [data-layer="oplog-in"],
+.wt-write[data-focus="apply"] [data-layer="oplog-in"],
+.wt-write[data-focus="apply"] [data-layer="apply"],
+.wt-write[data-focus="apply"] [data-layer="engine"] {
+  opacity: 1;
+}
+
+.wt-write[data-phase="pair"] .ww-card--data,
+.wt-write[data-phase="commit"] .ww-card--data,
+.wt-write[data-phase="journal"] .ww-card--data,
+.wt-write[data-phase="local"] .ww-card--data,
+.wt-write[data-phase="copy"] .ww-card--data,
+.wt-write[data-phase="apply"] .ww-card--data {
+  border-style: solid;
+  border-color: var(--ww-data);
+  background: var(--ww-data-bg);
+  color: var(--ww-data);
+}
+
+.wt-write[data-phase="pair"] .ww-card--oplog,
+.wt-write[data-phase="commit"] .ww-card--oplog,
+.wt-write[data-phase="journal"] .ww-card--oplog,
+.wt-write[data-phase="local"] .ww-card--oplog,
+.wt-write[data-phase="copy"] .ww-card--oplog,
+.wt-write[data-phase="apply"] .ww-card--oplog {
+  border-style: solid;
+  border-color: var(--ww-oplog);
+  background: var(--ww-oplog-bg);
+  color: var(--ww-oplog);
+}
+
+.wt-write[data-phase="commit"] .ww-txn,
+.wt-write[data-phase="journal"] .ww-txn,
+.wt-write[data-phase="local"] .ww-txn,
+.wt-write[data-phase="copy"] .ww-txn,
+.wt-write[data-phase="apply"] .ww-txn {
+  border-style: solid;
+  border-color: var(--ww-leaf);
+  background: var(--ww-leaf-bg);
+  color: var(--ww-ink);
+  font-weight: 700;
+}
+
+.wt-write[data-phase="copy"] .ww-zone--secondary,
+.wt-write[data-phase="apply"] .ww-zone--secondary {
+  border-color: var(--ww-leaf);
+}
+
+.wt-write[data-phase="local"] .ww-local {
+  animation: ww-hold 1.2s ease-in-out infinite;
+}
+
+.wt-write[data-phase="write"] .ww-packet {
+  animation: ww-bob 1.2s ease-in-out infinite;
+}
+
+.wt-write[data-phase="write"] .ww-link__packet {
+  animation: ww-travel 0.9s ease forwards;
+}
+
+.wt-write[data-phase="pair"] .ww-link__packet,
+.wt-write[data-phase="commit"] .ww-link__packet,
+.wt-write[data-phase="local"] .ww-link__packet,
+.wt-write[data-phase="copy"] .ww-link__packet,
+.wt-write[data-phase="apply"] .ww-link__packet {
+  top: calc(100% - 0.45rem);
+  opacity: 0.85;
+}
+
+.wt-write[data-phase="copy"] .ww-bridge__packet {
+  animation: ww-travel 0.9s ease forwards;
+}
+
+.wt-write[data-phase="apply"] .ww-bridge__packet {
+  top: calc(100% - 0.45rem);
+  opacity: 0.85;
+}
+
+.wt-write[data-phase="journal"] .ww-journal__dot,
+.wt-write[data-phase="local"] .ww-journal__dot {
+  animation: ww-bob 1.2s ease-in-out infinite;
+}
+
+.wt-write[data-phase="apply"] .ww-engine li {
+  animation: ww-arrive 0.45s ease both;
+}
+
+.wt-write[data-phase="apply"] .ww-engine li:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.wt-write[data-phase="apply"] .ww-engine li:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.wt-write[data-phase="apply"] .ww-engine li:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.prose .wt-write .wt-write__caption {
+  margin-top: 0.85rem;
+  margin-bottom: 0;
+}
+
+.wt-write__caption {
+  margin-top: 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.wt-write__legend {
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--ww-line);
+}
+
+.wt-write__legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+
+.wt-write__legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.prose .wt-write .wt-write__legend p,
+.wt-write .wt-write__legend p {
+  margin-top: 0.45rem;
+}
+
+.ww-swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid var(--ww-line);
+  border-radius: 0.15rem;
+}
+
+.ww-swatch--data {
+  border-color: var(--ww-data);
+  background: var(--ww-data-bg);
+}
+
+.ww-swatch--oplog {
+  border-color: var(--ww-oplog);
+  background: var(--ww-oplog-bg);
+}
+
+.ww-swatch--journal {
+  border-color: var(--ww-leaf);
+  background: var(--ww-leaf-bg);
+}
+
+.ww-swatch--copy {
+  border: 1px dashed var(--ww-oplog);
+  background: transparent;
+}
+
+@keyframes ww-travel {
+  from {
+    top: 0;
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  to {
+    top: calc(100% - 0.45rem);
+    opacity: 1;
+  }
+}
+
+@keyframes ww-bob {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  50% {
+    transform: translateY(-0.12rem);
+  }
+}
+
+@keyframes ww-hold {
+  0%,
+  100% {
+    filter: saturate(1);
+  }
+
+  50% {
+    filter: saturate(1.35);
+  }
+}
+
+@keyframes ww-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (min-width: 36rem) {
+  .ww-pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-write *,
+  .wt-write *::before,
+  .wt-write *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
