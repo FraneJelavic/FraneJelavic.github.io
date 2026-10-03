@@ -1,7 +1,7 @@
 +++
 title = 'MongoDB: One write, two logs'
 date = '2026-09-24T12:00:00+02:00'
-lastmod = '2026-09-25T12:00:00+02:00'
+lastmod = '2026-09-30T15:00:00+02:00'
 draft = false
 description = 'Following a write through MongoDB replication and WiredTiger local durability.'
 categories = ['Databases']
@@ -83,8 +83,6 @@ The WiredTiger journal is the closest equivalent to PostgreSQL's WAL (Write Ahea
 The `oplog` has a different purpose. It is a capped collection stored in the `local` database as `local.oplog.rs`. Secondary members copy its entries and apply them to their own data.
 
 This raises an important consistency question. What prevents MongoDB from committing a document change without its corresponding oplog entry?
-
-![Client write path](images/twoWritePaths-v2.png)
 
 ### Data folder
 
@@ -259,6 +257,11 @@ Learning how WiredTiger works does not mean that I can derive every production d
 
 The quality of an (AI) recommendation depends on the question and the evidence supplied to it.
 
+## Glossary
+
+Visual representation of the write flow through MongoDB and WiredTiger:
+
+{{< wiredtiger-write >}}
 
 ## Further reading
 
@@ -267,3 +270,4 @@ The quality of an (AI) recommendation depends on the question and the evidence s
 - [MongoDB manual: Replica set oplog](https://www.mongodb.com/docs/manual/core/replica-set-oplog/)
 - [MongoDB manual: Replica set synchronization](https://www.mongodb.com/docs/manual/core/replica-set-sync/)
 - [MongoDB source documentation: Storage engine](https://github.com/mongodb/mongo/blob/master/src/mongo/db/storage/README.md)
+
