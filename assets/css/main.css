@@ -598,7 +598,8 @@ pre code {
   background: var(--code-background);
 }
 
-.content-image {
+.content-image,
+.content-video {
   margin: 2rem 0;
 }
 
@@ -609,7 +610,15 @@ pre code {
   margin-inline: auto;
 }
 
-.content-image figcaption {
+.content-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.content-image figcaption,
+.content-video figcaption {
   margin-top: 0.6rem;
   color: var(--muted);
   font-size: 0.85rem;

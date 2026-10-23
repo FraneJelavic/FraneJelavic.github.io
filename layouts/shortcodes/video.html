@@ -1,0 +1,14 @@
+{{- $src := .Get "src" -}}
+{{- $caption := .Get "caption" -}}
+{{- $captionID := printf "video-caption-%s" ($src | urlize) -}}
+{{- with .Page.Resources.Get $src }}
+  <figure class="content-video">
+    <video controls playsinline preload="metadata" aria-describedby="{{ $captionID }}">
+      <source src="{{ .RelPermalink }}" type="{{ .MediaType.Type }}">
+      <a href="{{ .RelPermalink }}">Download the video</a>.
+    </video>
+    <figcaption id="{{ $captionID }}">{{ $caption }}</figcaption>
+  </figure>
+{{- else }}
+  {{- errorf "Unable to find video page resource %q" $src -}}
+{{- end }}

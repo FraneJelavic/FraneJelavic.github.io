@@ -1,7 +1,7 @@
 +++
 title = 'MongoDB: One write, two logs'
 date = '2026-09-24T12:00:00+02:00'
-lastmod = '2026-09-30T15:00:00+02:00'
+lastmod = '2026-10-23T13:49:03+02:00'
 draft = false
 description = 'Following a write through MongoDB replication and WiredTiger local durability.'
 categories = ['Databases']
@@ -259,9 +259,7 @@ The quality of an (AI) recommendation depends on the question and the evidence s
 
 ## Glossary
 
-Visual representation of the write flow through MongoDB and WiredTiger:
-
-{{< wiredtiger-write >}}
+{{< video src="media/mongodb-glossary.mp4" caption="Animated glossary of MongoDB and WiredTiger terms used in this article." >}}
 
 ## Further reading
 
