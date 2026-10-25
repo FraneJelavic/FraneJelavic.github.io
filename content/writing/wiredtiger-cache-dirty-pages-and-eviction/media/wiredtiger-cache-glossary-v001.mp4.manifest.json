@@ -1,0 +1,39 @@
+{
+  "title": "WiredTiger cache: dirty pages and eviction",
+  "videoSha256": "3a152e0578c3aafca90f161136449ee398cafa7678b1167a9bdfcaa48c264eaf",
+  "sceneSha256": "5f3dbf8122f25e931d37389b6724e50f38c3389d3d686874ab5230c78aa28365",
+  "runtimeSha256": "50fc682c73f3721770abb6756382e75357f00c473b7fa21b327bc1c2511edbae",
+  "theme": "dark",
+  "width": 1600,
+  "height": 900,
+  "fps": 30,
+  "frames": 1470,
+  "storyDurationSeconds": 49,
+  "encodedDurationSeconds": 49,
+  "icons": [
+    "Terminal",
+    "Server",
+    "FileText",
+    "Layers",
+    "ScrollText",
+    "ShieldCheck",
+    "Check",
+    "LockKeyhole",
+    "Cpu",
+    "HardDrive",
+    "Clock3",
+    "CirclePause"
+  ],
+  "validation": {
+    "width": 1600,
+    "height": 900,
+    "fps": 30,
+    "duration": 49,
+    "codec": "h264",
+    "pixelFormat": "yuv420p",
+    "audioStreams": 0,
+    "silent": true,
+    "decodedFrames": 1470,
+    "fullDecode": true
+  }
+}

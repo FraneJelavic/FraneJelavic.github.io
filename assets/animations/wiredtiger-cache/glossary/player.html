@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Illustrated process animation</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f5f8f5;color:#1e3027;font:15px Arial,sans-serif}
+    body[data-theme="dark"]{background:#07100b;color:#e3ebe6;color-scheme:dark}
+    main{max-width:1080px;margin:24px auto;padding:0 12px}#stage svg{display:block;width:100%;height:auto}
+    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+    button,select{font:inherit;color:inherit;background:transparent;border:1px solid #8999a4;border-radius:8px;padding:9px 12px}
+    button{cursor:pointer}button:disabled{opacity:.5;cursor:default}input{accent-color:#4775bd;min-width:120px;flex:1}
+    #status{font-size:13px;opacity:.8;min-height:1.2em}label{display:flex;align-items:center;gap:6px}
+    @media(max-width:559px){main{margin-top:0}.controls{gap:8px}#seek{order:5;flex-basis:100%}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+</head>
+<body data-theme="light">
+  <main aria-label="WiredTiger cache animated glossary">
+    <div id="stage"></div>
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <button id="replay" type="button">Replay</button>
+      <input id="seek" type="range" min="0" step="0.01" value="0" aria-label="Animation time">
+      <output id="time" aria-label="Time"></output>
+      <label>Theme <select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    </div>
+    <p id="status" role="status"></p>
+    <p>Figures illustrate the article's 5% dirty target and 20% dirty trigger; percentages use configured cache capacity.</p>
+  </main>
+  <script>/*__RUNTIME__*/</script>
+  <script>/*__SCENE__*/</script>
+  <script>const animationIcons = /*__ICONS__*/;</script>
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const scene=globalThis.animationScene, runtime=globalThis.animationRuntime;
+    const stage=document.getElementById('stage'), play=document.getElementById('play'), replay=document.getElementById('replay');
+    const seek=document.getElementById('seek'), theme=document.getElementById('theme'), time=document.getElementById('time'), status=document.getElementById('status');
+    const clock={time:0}, reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    let tween=null, raf=null, playing=false;
+    document.title=scene.meta.title; seek.max=scene.meta.duration;
+    function draw(){
+      const width=Math.max(260,stage.clientWidth), height=width<560?Math.max(700,width*1.9):width*9/16;
+      const frame=runtime.render(scene,{time:clock.time,width,height,theme:theme.value,icons:animationIcons});
+      stage.innerHTML=frame.svg; seek.value=clock.time;
+      time.textContent=`${clock.time.toFixed(1)} / ${scene.meta.duration}s`;
+    }
+    function pause(){if(tween)tween.kill();tween=null;if(raf!==null)cancelAnimationFrame(raf);raf=null;playing=false;play.textContent='Play';}
+    function start(){
+      if(reduced.matches)return;
+      pause();if(clock.time>=scene.meta.duration)clock.time=0;
+      playing=true;play.textContent='Pause';
+      if(window.gsap){tween=gsap.to(clock,{time:scene.meta.duration,duration:scene.meta.duration-clock.time,ease:'none',onUpdate:draw,onComplete:pause});}
+      else{const from=clock.time, started=performance.now();function tick(now){clock.time=Math.min(scene.meta.duration,from+(now-started)/1000);draw();if(clock.time<scene.meta.duration)raf=requestAnimationFrame(tick);else pause();}raf=requestAnimationFrame(tick);}
+    }
+    play.onclick=()=>playing?pause():start();
+    replay.onclick=()=>{pause();clock.time=0;draw();start();};
+    seek.oninput=()=>{pause();clock.time=Number(seek.value);draw();};
+    theme.onchange=()=>{document.body.dataset.theme=theme.value;draw();};
+    function applyMotion(){pause();play.disabled=reduced.matches;status.textContent=reduced.matches?'Reduced motion: use the time slider to explore each step.':'Play or scrub to explore the process.';}
+    reduced.addEventListener('change',applyMotion);new ResizeObserver(draw).observe(stage);
+    applyMotion();draw();
+  });
+  </script>
+  <!--__LICENSE__-->
+</body>
+</html>

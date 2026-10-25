@@ -1,0 +1,88 @@
+{{- $id := printf "wt-pressure-%d" .Ordinal -}}
+<figure class="wt-pressure" id="{{ $id }}" data-wt-pressure data-mode="below" data-motion="running" aria-labelledby="{{ $id }}-title">
+  <header class="wt-pressure__header">
+    <div>
+      <p class="wt-pressure__eyebrow">Interactive glossary</p>
+      <h3 id="{{ $id }}-title">Move the dirty percentage</h3>
+    </div>
+    <output class="wt-pressure__value" for="{{ $id }}-range" data-wtp-value aria-live="off">4%</output>
+  </header>
+
+  <label class="wt-pressure__label" for="{{ $id }}-range">Dirty share of configured cache capacity</label>
+  <p class="wt-pressure__hint" id="{{ $id }}-hint">Drag the bar, or use the arrow keys, to see which threads do eviction work.</p>
+  <div class="wt-pressure__range">
+    <input id="{{ $id }}-range" data-wtp-range type="range" min="0" max="100" step="0.1" value="4" style="--wtp-percent: 4%" aria-describedby="{{ $id }}-hint {{ $id }}-scope" disabled>
+    <div class="wt-pressure__ticks" aria-hidden="true">
+      <span style="left: 5%">5%</span>
+      <span style="left: 20%">20%</span>
+      <span class="wt-pressure__maximum">100%</span>
+    </div>
+  </div>
+  <div class="wt-pressure__thresholds">
+    <span><i class="wt-pressure__key wt-pressure__key--worker" aria-hidden="true"></i>5%: background target</span>
+    <span><i class="wt-pressure__key wt-pressure__key--application" aria-hidden="true"></i>20%: application trigger</span>
+  </div>
+
+  <div class="wt-pressure__presets" role="group" aria-label="Example dirty percentages">
+    <button type="button" data-wtp-preset="4" disabled>4%: below target</button>
+    <button type="button" data-wtp-preset="8" disabled>8%: workers evict</button>
+    <button type="button" data-wtp-preset="27" disabled>27%: application helps</button>
+  </div>
+
+  <div class="wt-pressure__status" role="status" aria-live="polite" aria-atomic="true">
+    <p class="wt-pressure__state" data-wtp-state>Below the dirty target</p>
+    <p data-wtp-explanation>Dirty content is at or below 5%. This example does not need dirty-page eviction.</p>
+  </div>
+
+  <div class="wt-pressure__diagram">
+    <section class="wt-pressure__lane wt-pressure__lane--workers" aria-label="Background eviction workers">
+      <div class="wt-pressure__lane-head">
+        <h4>Eviction workers</h4>
+        <span class="wt-pressure__count">4 default</span>
+      </div>
+      <div class="wt-pressure__threads" aria-hidden="true">
+        {{ range seq 4 }}
+          <span class="wt-pressure__thread" style="--wtp-order: {{ . }}">{{ partial "wiredtiger-cache/icon.html" "cpu" }}</span>
+        {{ end }}
+      </div>
+      <p class="wt-pressure__activity" data-wtp-workers>No dirty-page eviction</p>
+      <p class="wt-pressure__detail">Reconcile dirty pages, then free cache memory.</p>
+    </section>
+
+    <div class="wt-pressure__route wt-pressure__route--workers" aria-hidden="true">
+      <span class="wt-pressure__packet"></span>
+      <span class="wt-pressure__packet wt-pressure__packet--second"></span>
+    </div>
+
+    <section class="wt-pressure__disk" aria-label="Shared table files on disk">
+      <div class="wt-pressure__disk-icon">{{ partial "wiredtiger-cache/icon.html" "disk" }}</div>
+      <h4>.wt data files</h4>
+      <div class="wt-pressure__file-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p data-wtp-disk>Waiting for reconciliation</p>
+      <p class="wt-pressure__detail">Both groups use the same disk I/O.</p>
+    </section>
+
+    <section class="wt-pressure__lane wt-pressure__lane--application" aria-label="Application threads">
+      <div class="wt-pressure__lane-head"><h4>Application threads</h4></div>
+      <div class="wt-pressure__threads" aria-hidden="true">
+        {{ range seq 3 }}
+          <span class="wt-pressure__thread" style="--wtp-order: {{ . }}">{{ partial "wiredtiger-cache/icon.html" "cpu" }}</span>
+        {{ end }}
+      </div>
+      <p class="wt-pressure__activity" data-wtp-application>Serving requests</p>
+      <p class="wt-pressure__detail" data-wtp-client>Application threads stay on requests.</p>
+    </section>
+
+    <div class="wt-pressure__route wt-pressure__route--application" aria-hidden="true">
+      <span class="wt-pressure__packet"></span>
+      <span class="wt-pressure__packet wt-pressure__packet--second"></span>
+    </div>
+  </div>
+
+  <figcaption class="wt-pressure__footer">
+    <button type="button" class="wt-pressure__motion" data-wtp-motion disabled>Pause motion</button>
+    <p id="{{ $id }}-scope">An illustration of the article's dirty-cache thresholds. Thread activity is illustrative; cache fullness, pinned pages, and I/O limits also affect eviction.</p>
+  </figcaption>
+  <noscript><p>Enable JavaScript to move the bar. Above 5%, background workers evict dirty pages. Above 20%, application threads also perform eviction before continuing their requests.</p></noscript>
+</figure>
+<script src="{{ "animations/wiredtiger-cache/pressure.js" | relURL }}" defer></script>

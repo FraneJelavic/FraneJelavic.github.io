@@ -1,0 +1,10 @@
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {{- if eq . "cpu" -}}
+    <rect x="5" y="5" width="14" height="14" rx="3" />
+    <rect x="9" y="9" width="6" height="6" rx="1" />
+    <path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3" />
+  {{- else if eq . "disk" -}}
+    <path d="m5 4-3 9v6a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-6l-3-9Z" />
+    <path d="M2 13h20M6 17h.01M10 17h.01" />
+  {{- end -}}
+</svg>

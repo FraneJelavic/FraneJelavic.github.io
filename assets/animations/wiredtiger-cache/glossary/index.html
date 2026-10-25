@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Illustrated process animation</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f5f8f5;color:#1e3027;font:15px Arial,sans-serif}
+    body[data-theme="dark"]{background:#07100b;color:#e3ebe6;color-scheme:dark}
+    main{max-width:1080px;margin:24px auto;padding:0 12px}#stage svg{display:block;width:100%;height:auto}
+    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+    button,select{font:inherit;color:inherit;background:transparent;border:1px solid #8999a4;border-radius:8px;padding:9px 12px}
+    button{cursor:pointer}button:disabled{opacity:.5;cursor:default}input{accent-color:#4775bd;min-width:120px;flex:1}
+    #status{font-size:13px;opacity:.8;min-height:1.2em}label{display:flex;align-items:center;gap:6px}
+    @media(max-width:559px){main{margin-top:0}.controls{gap:8px}#seek{order:5;flex-basis:100%}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+</head>
+<body data-theme="dark">
+  <main aria-label="WiredTiger cache animated glossary">
+    <div id="stage"></div>
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <button id="replay" type="button">Replay</button>
+      <input id="seek" type="range" min="0" step="0.01" value="0" aria-label="Animation time">
+      <output id="time" aria-label="Time"></output>
+      <label>Theme <select id="theme"><option value="light">Light</option><option selected value="dark">Dark</option></select></label>
+    </div>
+    <p id="status" role="status"></p>
+    <p>Figures illustrate the article's 5% dirty target and 20% dirty trigger; percentages use configured cache capacity.</p>
+  </main>
+  <script>/* Shared deterministic SVG renderer: browser preview and frame export use this file. */
+globalThis.animationRuntime = (() => {
+  const palettes = {
+    light: { background: '#f5f8f5', surface: '#ffffff', ink: '#1e3027', muted: '#52675b', line: '#becdc3', blue: '#286780', violet: '#77509b', green: '#286957', tint: '#eaf0ec' },
+    dark: { background: '#07100b', surface: '#1b2c22', ink: '#e3ebe6', muted: '#a3b4ab', line: '#34483a', blue: '#9dd2e3', violet: '#c4aedc', green: '#a1d3c5', tint: '#101b14' }
+  };
+  const esc = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
+  const attrs = object => Object.entries(object).filter(([,v]) => v !== undefined).map(([k,v]) => `${k}="${esc(v)}"`).join(' ');
+  const element = (tag, attributes = {}, content = '') => `<${tag} ${attrs(attributes)}>${content}</${tag}>`;
+  const clamp = x => Math.max(0, Math.min(1, x));
+  const progress = (t, start, end) => clamp((t - start) / (end - start));
+  const smooth = x => { x = clamp(x); return x*x*(3-2*x); };
+  const reveal = (t, start, end) => smooth(progress(t, start, end));
+  function text(value, x, y, options = {}) {
+    return element('text', { x, y, 'font-size': 16, 'text-anchor': 'middle', ...options }, esc(value));
+  }
+  function icon(definitions, name, x, y, size = 32, color = 'currentColor', extra = {}) {
+    if (!definitions[name]) throw new Error(`Missing icon: ${name}. Add it to scene.meta.icons and rebuild.`);
+    return element('g', { transform: `translate(${x} ${y}) scale(${size/24})`, fill: 'none', stroke: color, 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', ...extra },
+      definitions[name].map(([tag, attributes]) => element(tag, attributes)).join(''));
+  }
+  function pointOn(points, fraction) {
+    const lengths = points.slice(1).map((p,i) => Math.hypot(p[0]-points[i][0], p[1]-points[i][1]));
+    let remaining = lengths.reduce((a,b) => a+b, 0) * clamp(fraction);
+    for (let i=0; i<lengths.length; i++) {
+      if (remaining <= lengths[i] || i === lengths.length-1) {
+        const r = lengths[i] ? clamp(remaining/lengths[i]) : 1;
+        return [points[i][0] + (points[i+1][0]-points[i][0])*r, points[i][1] + (points[i+1][1]-points[i][1])*r];
+      }
+      remaining -= lengths[i];
+    }
+    return points[0];
+  }
+  function connection(points, fraction, color, dashed = false) {
+    const p = clamp(fraction);
+    if (!p) return '';
+    const lengths = points.slice(1).map((v,i) => Math.hypot(v[0]-points[i][0],v[1]-points[i][1]));
+    const total = lengths.reduce((a,b) => a+b,0);
+    let spent = 0, d = `M ${points[0].join(' ')}`;
+    for (let i=0; i<lengths.length; i++) {
+      if (spent+lengths[i] < total*p) { d += ` L ${points[i+1].join(' ')}`; spent += lengths[i]; }
+      else { d += ` L ${pointOn(points,p).join(' ')}`; break; }
+    }
+    const end = pointOn(points,p), before = pointOn(points,Math.max(0,p-0.02));
+    const angle = Math.atan2(end[1]-before[1],end[0]-before[0])*180/Math.PI;
+    return element('path', { d, fill:'none', stroke:color, 'stroke-width':2, 'stroke-linecap':'round', 'stroke-linejoin':'round', 'stroke-dasharray':dashed?'5 7':undefined }) +
+      element('path', { d:'M -7 -4 L 0 0 L -7 4', transform:`translate(${end.join(' ')}) rotate(${angle})`, fill:'none', stroke:color, 'stroke-width':2, 'stroke-linecap':'round', 'stroke-linejoin':'round' });
+  }
+  function render(scene, {time=0, width=960, height=540, theme='light', icons={}} = {}) {
+    const p = palettes[theme];
+    if (!p) throw new Error(`Unknown theme: ${theme}`);
+    const narrow = width < 560 || width/height < 1.2;
+    const w = narrow ? 360 : 960, h = height/width*w;
+    const duration = scene.meta.duration;
+    const t = Math.max(0,Math.min(duration,time));
+    const helpers = { esc, attrs, element, text, clamp, progress, smooth, reveal, pointOn, connection,
+      icon:(...args) => icon(icons,...args), group:(content,attributes={}) => element('g',attributes,content) };
+    const frame = scene.render({ time:t, duration, width:w, height:h, narrow, palette:p, h:helpers });
+    if (!frame || typeof frame.body !== 'string' || typeof frame.caption !== 'string') throw new Error('scene.render must return {body, caption} strings');
+    const description = `${scene.meta.title}. ${frame.caption}`;
+    const margin = narrow ? 25 : 40;
+    const captionWords = frame.caption.split(' '), captionLines = [];
+    let line = '';
+    for (const word of captionWords) {
+      if (line && (line + ' ' + word).length > (narrow ? 37 : 85)) {
+        captionLines.push(line); line = word;
+      } else line += (line ? ' ' : '') + word;
+    }
+    if (line) captionLines.push(line);
+    const caption = captionLines.map((value, i) => text(value, w/2, h - 68 - (captionLines.length - 1 - i)*23, {'font-size': narrow ? 16 : 20})).join('');
+    const chapters = scene.meta.chapters;
+    const gap = 7, segment = (w - margin*2 - gap*(chapters.length-1))/chapters.length;
+    const timeline = chapters.map((chapter, i) => {
+      const x = margin + i*(segment+gap), fraction = progress(t, chapter.start, chapters[i+1]?.start ?? duration);
+      return element('path', {d:`M ${x} ${h-22} h ${segment}`,stroke:p.line,'stroke-width':3}) +
+        (fraction ? element('path', {d:`M ${x} ${h-22} h ${segment*fraction}`,stroke:i<3?p.blue:p.green,'stroke-width':3}) : '');
+    }).join('');
+    const header = text(frame.title, margin, narrow?56:72, {'text-anchor':'start','font-size':narrow?28:36,'font-weight':600}) +
+      text(`${String(frame.step).padStart(2,'0')} / ${String(chapters.length).padStart(2,'0')}`,w-margin,narrow?23:42,{'text-anchor':'end','font-family':'monospace','font-size':11,fill:p.muted}) +
+      element('path', {d:`M ${margin} ${narrow?77:98} H ${w-margin}`,stroke:p.line,'stroke-width':1});
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${w} ${h}" role="img" aria-labelledby="animation-title animation-desc"><title id="animation-title">${esc(scene.meta.title)}</title><desc id="animation-desc">${esc(description)}</desc><rect width="${w}" height="${h}" fill="${p.background}"/><g font-family="Arial, sans-serif" fill="${p.ink}">${header}${frame.body}${caption}${timeline}</g></svg>`;
+    return {svg, caption:frame.caption};
+  }
+  return {render,palettes};
+})();
+</script>
+  <script>/* Wording, timing, and semantic colors are editable here. Render has no playback state. */
+globalThis.animationScene = {
+  meta: {
+    title: 'WiredTiger cache: dirty pages and eviction',
+    duration: 49,
+    icons: ['Terminal', 'Server', 'FileText', 'Layers', 'ScrollText', 'ShieldCheck',
+      'Check', 'LockKeyhole', 'Cpu', 'HardDrive', 'Clock3', 'CirclePause'],
+    checkpoints: [0, 0.07, 0.2, 0.34, 0.48, 0.64, 0.78, 0.94, 1],
+    chapters: [
+      {start: 0, title: 'The write', caption: 'One write changes collection, index, and oplog pages.'},
+      {start: 7, title: 'Dirty pages', caption: 'A dirty page has changes that its table file does not yet contain.'},
+      {start: 14, title: 'Journal', caption: 'Journal records support recovery while pages remain dirty.'},
+      {start: 21, title: 'Past the target', caption: 'Past 5% dirty, background workers reconcile and evict pages.'},
+      {start: 28, title: 'Two endings', caption: 'Checkpoint keeps a clean page. Eviction frees its cache slot.'},
+      {start: 35, title: 'Past the trigger', caption: 'Past 20% dirty, application threads help with eviction.'},
+      {start: 42, title: 'The limit', caption: 'More workers help when the disk has capacity for more writes.'},
+    ],
+  },
+
+  render({time, narrow, palette: p, h}) {
+    const {element: e, text, icon, group, reveal, progress, connection, pointOn} = h;
+    const chapters = globalThis.animationScene.meta.chapters;
+    const chapterIndex = chapters.findLastIndex(chapter => time >= chapter.start);
+    const chapter = chapters[chapterIndex];
+    const t = time - chapter.start;
+    const dark = p.background === '#07100b';
+    const c = {
+      dirty: dark ? '#eda66b' : '#a14b1f', dirtyFill: dark ? '#38271b' : '#f9e9d9',
+      clean: p.blue, cleanFill: dark ? '#172f3c' : '#e2f0f6',
+      journalFill: dark ? '#16332c' : '#e4f2ec',
+      pin: dark ? '#c4aedc' : '#77509b', pinFill: dark ? '#2b2437' : '#f0e9f7',
+    };
+    const top = narrow ? 100 : 119;
+    let body = '';
+
+    function label(value, x, y, size = 16, color = p.ink, extra = {}) {
+      return text(value, x, y, {'font-size': size, fill: color, 'text-anchor': 'start', ...extra});
+    }
+    function lines(values, x, y, size = 15, color = p.muted, spacing = 22) {
+      return values.map((value, i) => label(value, x, y + i * spacing, size, color)).join('');
+    }
+    function box(x, y, w, ht, stroke = p.line, fill = 'url(#panel-fill)', radius = 12) {
+      return e('rect', {x, y, width: w, height: ht, rx: radius, fill, stroke, 'stroke-width': 1.4});
+    }
+    function badge(value, x, y, color = p.green, fill = c.journalFill, w = 90) {
+      return box(x, y, w, 25, color, fill, 5) + label(value, x + w / 2, y + 17, 12, color, {'text-anchor': 'middle', 'font-weight': 600});
+    }
+    function node(name, title, detail, x, y, w, color = p.green) {
+      return box(x, y, w, 65) + box(x + 12, y + 13, 32, 32, color, p.tint, 6) +
+        icon(name, x + 18, y + 19, 20, color) + label(title, x + 55, y + 28, 17, p.ink, {'font-weight': 600}) +
+        label(detail, x + 55, y + 49, 12, p.muted);
+    }
+    function page(x, y, title, state = 'dirty', w = 108) {
+      const color = state === 'clean' ? c.clean : state === 'pinned' ? c.pin : c.dirty;
+      const fill = state === 'clean' ? c.cleanFill : state === 'pinned' ? c.pinFill : c.dirtyFill;
+      return box(x, y, w, 78, color, fill, 8) + icon('FileText', x + 12, y + 12, 21, color) +
+        label(title, x + 12, y + 47, w < 90 ? 12 : 14, p.ink, {'font-weight': 600}) +
+        label(state, x + 12, y + 66, 12, color) +
+        (state === 'clean' ? icon('Check', x + w - 30, y + 13, 18, color) : '') +
+        (state === 'pinned' ? icon('LockKeyhole', x + w - 31, y + 13, 19, color) : '');
+    }
+    function slot(x, y, w = 108) {
+      return e('rect', {x, y, width: w, height: 78, rx: 8, stroke: p.line, 'stroke-dasharray': '5 5', fill: p.background}) +
+        label('free slot', x + w / 2, y + 44, 14, p.muted, {'text-anchor': 'middle'});
+    }
+    function transfer(points, start, end, color, name = 'FileText') {
+      let content = connection(points, reveal(t, start - 0.45, start), color);
+      if (t >= start && t < end) {
+        const [x, y] = pointOn(points, reveal(t, start, end));
+        content += group(box(-15, -18, 30, 36, color, p.surface, 5) + icon(name, -10, -12, 20, color), {transform: `translate(${x} ${y})`});
+      }
+      return content;
+    }
+    function disk(x, y, w, written = false) {
+      const compact = w < 220;
+      return box(x, y, w, 80, written ? p.green : p.line) +
+        icon('HardDrive', x + 15, y + 15, 25, written ? p.green : p.muted) +
+        label(compact ? '.wt files' : '.wt table files', x + 50, y + 28, compact ? 14 : 16, p.ink, {'font-family': 'monospace', 'font-weight': 600}) +
+        label(written ? 'reconciled data written' : 'unchanged by this write', x + 15, y + 59, compact ? 12 : 13, written ? p.green : p.muted) +
+        (written ? icon('Check', x + w - 33, y + 16, 18, p.green) : '');
+    }
+    function cache(x, y, w, ht) {
+      return box(x, y, w, ht, p.green) + icon('Layers', x + 16, y + 16, 24, p.green) +
+        label('WiredTiger cache', x + 50, y + 33, 18, p.ink, {'font-weight': 600}) +
+        label('in memory', x + 17, y + 56, 12, p.muted);
+    }
+    function workers(x, y, active = true) {
+      let content = label('Eviction workers · default 4', x, y, 15, active ? p.green : p.muted, {'font-weight': 600});
+      for (let i = 0; i < 4; i++) {
+        const stroke = active ? p.green : p.line;
+        const turn = active && t > 2 && t < 4.8 ? Math.sin((t - 2) * 3 + i) * 8 : 0;
+        content += box(x + i * 45, y + 13, 34, 34, stroke, active ? c.journalFill : p.surface, 7) +
+          group(icon('Cpu', x + i * 45 + 7, y + 20, 20, active ? p.green : p.muted), {transform: `rotate(${turn} ${x + i * 45 + 17} ${y + 30})`});
+      }
+      return content;
+    }
+    function meter(x, y, w, dirty, showTrigger = false) {
+      const trackY = y + 36;
+      const color = showTrigger && dirty > 20 ? c.dirty : p.green;
+      let content = label('Dirty share of configured cache', x, y, narrow ? 13 : 15, p.muted) +
+        label(`${Math.round(dirty)}%`, x + w, y + 2, 25, color, {'text-anchor': 'end', 'font-weight': 600}) +
+        box(x, trackY, w, 14, p.line, p.background, 4) +
+        e('rect', {x, y: trackY, width: w * dirty / 100, height: 14, rx: 4, fill: c.dirty});
+      for (const value of [5, 20]) {
+        const px = x + w * value / 100;
+        content += e('path', {d: `M ${px} ${trackY - 5} V ${trackY + 20}`, stroke: value === 5 ? p.green : c.dirty, 'stroke-width': 2});
+      }
+      return content + label('5% target', x, trackY + 42, 13, p.green) +
+        label('20% trigger', x + w, trackY + 42, 13, c.dirty, {'text-anchor': 'end'}) +
+        label('0', x, trackY + 18, 9, p.muted) +
+        label('100%', x + w, trackY + 18, 9, p.muted, {'text-anchor': 'end'});
+    }
+
+    body += e('defs', {}, e('linearGradient', {id: 'panel-fill', x1: '0', x2: '0', y1: '0', y2: '1'},
+      e('stop', {offset: '0%', 'stop-color': p.surface}) + e('stop', {offset: '100%', 'stop-color': p.tint})));
+
+    if (chapterIndex <= 2) {
+      const cacheX = narrow ? 26 : 302;
+      const cacheY = narrow ? top + 85 : top + 8;
+      const cacheW = narrow ? 308 : 392;
+      const cacheH = narrow ? 170 : 222;
+      const clientX = narrow ? 73 : 42;
+      const clientY = narrow ? top : cacheY + 78;
+      const clientW = narrow ? 214 : 168;
+      const pageW = narrow ? 84 : 108;
+      const pageY = cacheY + (narrow ? 69 : 91);
+      const pageGap = narrow ? 11 : 14;
+      const pageX = cacheX + (narrow ? 17 : 20);
+      body += node('Terminal', 'Client write', 'application thread', clientX, clientY, clientW, p.blue);
+      body += group(cache(cacheX, cacheY, cacheW, cacheH), {opacity: chapterIndex === 0 ? reveal(t, 0.5, 1.15) : 1});
+      const route = narrow ? [[180, clientY + 65], [180, cacheY - 5]] : [[clientX + clientW + 9, clientY + 32], [cacheX - 10, clientY + 32]];
+      body += transfer(route, chapterIndex === 0 ? 1.2 : -2, chapterIndex === 0 ? 2.5 : -1, p.blue);
+      const dirtyVisible = chapterIndex === 0 ? reveal(t, 2.6, 3.1) : 1;
+      body += group(['collection', 'index', 'oplog'].map((name, i) => page(pageX + i * (pageW + pageGap), pageY, name, 'dirty', pageW)).join(''), {opacity: dirtyVisible});
+      body += group(label(chapterIndex === 0 ? 'one storage transaction' : chapterIndex === 1 ? 'modified pages stay in memory' : 'dirty pages still cached', cacheX + cacheW / 2, cacheY + cacheH - (narrow ? 8 : 20), 13, chapterIndex === 1 ? c.dirty : p.green, {'text-anchor': 'middle'}), {opacity: dirtyVisible});
+
+      if (chapterIndex === 0) {
+        body += group(badge('applied', narrow ? 240 : 586, cacheY + 16, p.green, c.journalFill, 74), {opacity: reveal(t, 3.2, 3.7)});
+      } else if (chapterIndex === 1) {
+        const dx = narrow ? 43 : 740;
+        const dy = narrow ? cacheY + cacheH + 28 : cacheY + 83;
+        body += group(disk(dx, dy, narrow ? 274 : 183), {opacity: reveal(t, 2.2, 2.8)});
+        if (!narrow) {
+          body += group(label('4%', 825, cacheY + 37, 28, c.dirty, {'text-anchor': 'middle', 'font-weight': 600}) +
+            label('illustrative dirty share', 825, cacheY + 58, 12, p.muted, {'text-anchor': 'middle'}), {opacity: reveal(t, 3.4, 3.9)});
+        }
+      } else {
+        const dx = narrow ? 26 : 738;
+        const dy = narrow ? cacheY + cacheH + 29 : cacheY + 15;
+        const dw = narrow ? 308 : 184;
+        const landed = t >= 3.1;
+        body += group(box(dx, dy, dw, 96, p.green, c.journalFill) +
+          icon('ScrollText', dx + 14, dy + 17, 26, p.green) +
+          label('journal/', dx + 49, dy + 35, 18, p.green, {'font-family': 'monospace', 'font-weight': 600}) +
+          label(landed ? 'recovery record flushed' : 'recovery records', dx + 14, dy + 64, 12, p.muted) +
+          (landed ? icon('ShieldCheck', dx + dw - 38, dy + 60, 24, p.green) : ''), {opacity: reveal(t, 0.3, 0.8)});
+        const recordRoute = narrow ? [[cacheX + cacheW / 2, cacheY + cacheH + 3], [dx + dw / 2, dy - 3]] : [[cacheX + cacheW + 4, cacheY + 62], [dx - 6, cacheY + 62]];
+        body += transfer(recordRoute, 1.1, 3.1, p.green, 'ScrollText');
+        if (!narrow) body += group(disk(dx, dy + 118, dw), {opacity: reveal(t, 3.3, 3.8)});
+        else body += group(label('Collection and index files stay unchanged.', 180, dy + 120, 13, p.muted, {'text-anchor': 'middle'}), {opacity: reveal(t, 3.3, 3.8)});
+      }
+    }
+
+    if (chapterIndex === 3 || chapterIndex === 5) {
+      const trigger = chapterIndex === 5;
+      const mx = narrow ? 30 : 54;
+      const my = top + 12;
+      const mw = narrow ? 300 : 406;
+      const dirty = trigger ? 8 + 19 * reveal(t, 0.5, 2) : 4 + 4 * reveal(t, 0.5, 2);
+      const crossed = trigger ? dirty > 20 : dirty > 5;
+      body += meter(mx, my, mw, dirty, trigger);
+      const wx = narrow ? 30 : 54;
+      const wy = my + 122;
+      body += workers(wx, wy, crossed || trigger);
+      const px = narrow ? 30 : 54;
+      const py = wy + 69;
+      const pageGone = !trigger && t >= 4.4;
+      body += pageGone ? slot(px, py, 97) : page(px, py, 'page', 'dirty', 97);
+      const pinnedX = narrow ? 230 : 270;
+      body += page(pinnedX, py, 'reader', 'pinned', 97);
+      if (trigger) {
+        body += group(label('skipped until released', pinnedX + 48, py + 97, 11, c.pin, {'text-anchor': 'middle'}), {opacity: reveal(t, 4, 4.4)});
+      } else {
+        const dx = narrow ? 146 : 540;
+        const dy = narrow ? py : top + 157;
+        const dw = narrow ? 70 : 360;
+        if (narrow) {
+          body += box(dx, dy, dw, 78) + icon('HardDrive', dx + 22, dy + 13, 26, t >= 4.2 ? p.green : p.muted) +
+            label('.wt', dx + dw / 2, dy + 63, 14, p.ink, {'text-anchor': 'middle'});
+        } else {
+          body += disk(dx, dy, dw, t >= 4.2);
+          body += node('Server', 'Application threads', 'continue serving reads and writes', dx, top + 10, dw, p.blue);
+          body += badge('background work', dx, top + 94, p.green, c.journalFill, 144);
+          body += label('A pinned page stays until its reader releases it.', dx, dy + 112, 14, c.pin);
+        }
+        const points = narrow ? [[px + 100, py + 39], [dx - 6, py + 39]] :
+          [[px + 101, py + 39], [195, py + 39], [195, py + 107], [470, py + 107], [470, dy + 40], [dx - 10, dy + 40]];
+        body += transfer(points, 2.8, 4.2, p.green);
+        if (narrow) body += label('Pinned reader: skipped', 180, py + 106, 13, c.pin, {'text-anchor': 'middle'});
+      }
+      if (trigger) {
+        const ax = narrow ? 30 : 540;
+        const ay = narrow ? py + 123 : top + 13;
+        const aw = narrow ? 300 : 360;
+        body += node('Server', 'Application threads', crossed && t > 2.8 ? 'help with eviction before continuing' : 'serving reads and writes', ax, ay, aw, crossed ? c.dirty : p.blue);
+        const joinPoints = narrow ? [[180, ay - 6], [180, wy + 53]] : [[ax - 9, ay + 32], [497, ay + 32], [497, wy + 32], [wx + 189, wy + 32]];
+        body += group(transfer(joinPoints, 2.3, 3.6, c.dirty, 'Cpu'), {opacity: crossed ? 1 : 0});
+        if (!narrow) body += group(disk(ax, ay + 145, aw, true), {opacity: reveal(t, 3.5, 3.9)});
+        body += group(icon('CirclePause', ax + 4, ay + (narrow ? 75 : 89), 21, c.dirty) +
+          label('client waits for its thread', ax + 35, ay + (narrow ? 91 : 105), narrow ? 15 : 18, c.dirty, {'font-weight': 600}), {opacity: reveal(t, 3.7, 4.2)});
+      }
+    }
+
+    if (chapterIndex === 4) {
+      const cards = narrow ? [
+        {x: 25, y: top, w: 310, ht: 168, title: 'Checkpoint', keep: true},
+        {x: 25, y: top + 190, w: 310, ht: 168, title: 'Eviction', keep: false},
+      ] : [
+        {x: 44, y: top, w: 416, ht: 290, title: 'Checkpoint', keep: true},
+        {x: 500, y: top, w: 416, ht: 290, title: 'Eviction', keep: false},
+      ];
+      for (const {x, y, w, ht, title, keep} of cards) {
+        const landed = t >= 3.4;
+        let content = box(x, y, w, ht, keep ? p.blue : p.green) +
+          icon(keep ? 'Clock3' : 'Cpu', x + 16, y + 17, 24, keep ? p.blue : p.green) +
+          label(title, x + 52, y + 36, 22, p.ink, {'font-weight': 600});
+        const pageX = x + (narrow ? 15 : 25);
+        const pageY = y + (narrow ? 62 : 82);
+        content += !keep && t >= 4.2 ? slot(pageX, pageY, narrow ? 91 : 124) :
+          page(pageX, pageY, 'page', landed && keep ? 'clean' : 'dirty', narrow ? 91 : 124);
+        const fileX = x + (narrow ? 212 : 256);
+        const fileY = pageY + 7;
+        content += box(fileX, fileY, narrow ? 82 : 130, 63, landed ? p.green : p.line) +
+          icon('HardDrive', fileX + 12, fileY + 10, 23, landed ? p.green : p.muted) + label('.wt file', fileX + 10, fileY + 49, 13, p.ink);
+        content += transfer([[pageX + (narrow ? 96 : 129), pageY + 37], [fileX - 6, pageY + 37]], 1.3, 3.4, p.green);
+        content += group(label('reconcile', x + (narrow ? 158 : 204), pageY + 19, 12, p.green, {'text-anchor': 'middle'}), {opacity: reveal(t, 0.5, 1)});
+        if (!narrow) {
+          content += group(badge(keep ? 'clean, still cached' : 'memory freed', x + 26, y + 195, keep ? p.blue : p.green, keep ? c.cleanFill : c.journalFill, 161), {opacity: reveal(t, 4.2, 4.6)});
+          content += lines(keep ? ['Periodic consistent snapshot.', 'This page stays in memory.'] : ['Write the dirty page, then remove it.', 'The slot can hold another page.'], x + 26, y + 246);
+        } else {
+          content += group(label(keep ? 'clean, still cached' : 'memory freed', x + 16, y + ht - 10, 13, keep ? p.blue : p.green), {opacity: reveal(t, 4.2, 4.6)});
+        }
+        body += group(content, {opacity: reveal(t, keep ? 0 : 0.25, keep ? 0.4 : 0.65)});
+      }
+    }
+
+    if (chapterIndex === 6) {
+      const rows = narrow ? [
+        {x: 25, y: top, w: 310, ht: 171, helps: false},
+        {x: 25, y: top + 193, w: 310, ht: 171, helps: true},
+      ] : [
+        {x: 44, y: top, w: 416, ht: 288, helps: false},
+        {x: 500, y: top, w: 416, ht: 288, helps: true},
+      ];
+      for (const {x, y, w, ht, helps} of rows) {
+        const color = helps ? p.green : c.dirty;
+        const wy = y + (narrow ? 49 : 92);
+        const dx = x + w - (narrow ? 65 : 96);
+        const dy = wy + 6;
+        let content = box(x, y, w, ht, color) + label(helps ? 'Workers are busy' : 'Disk is saturated', x + 17, y + 32, narrow ? 19 : 24, p.ink, {'font-weight': 600});
+        for (let i = 0; i < 4; i++) {
+          const xx = x + 19 + (i % 2) * 40;
+          const yy = wy + Math.floor(i / 2) * 36;
+          content += box(xx, yy, 29, 29, color, helps ? c.journalFill : c.dirtyFill, 5) + icon('Cpu', xx + 5, yy + 5, 19, color);
+        }
+        for (let i = 0; i < 2; i++) {
+          const xx = x + 99, yy = wy + i * 36;
+          content += group(box(xx, yy, 29, 29, color, helps ? c.journalFill : c.dirtyFill, 5) +
+            icon('Cpu', xx + 5, yy + 5, 19, color), {opacity: reveal(t, 0.7, 1.3)});
+        }
+        content += box(dx, dy, narrow ? 47 : 64, 61, color, helps ? c.journalFill : c.dirtyFill, 7) +
+          icon('HardDrive', dx + (narrow ? 10 : 18), dy + 10, 28, color) + label('disk', dx + (narrow ? 24 : 32), dy + 50, 12, color, {'text-anchor': 'middle'});
+        const route = [[x + 147, wy + 34], [dx - 7, wy + 34]];
+        content += connection(route, reveal(t, 0.5, 1), color);
+        for (let i = 0; i < 3; i++) {
+          const phase = helps ? progress(t, 1 + i * 0.85, 2.1 + i * 0.85) : 0.13 + i * 0.18;
+          if (helps && (phase === 0 || phase === 1)) continue;
+          if (!helps && t < 1.2 + i * 0.35) continue;
+          const [xx, yy] = pointOn(route, phase);
+          content += box(xx - 8, yy - 10, 16, 20, color, p.surface, 3);
+        }
+        content += group(badge(helps ? 'extra workers help' : 'extra workers wait', x + 18, y + ht - (narrow ? 36 : 79), color, helps ? c.journalFill : c.dirtyFill, 170), {opacity: reveal(t, 3.5, 4)});
+        if (!narrow) content += label(helps ? 'Disk has capacity for more writes.' : 'The same I/O bottleneck remains.', x + 18, y + ht - 24, 15, p.muted);
+        body += group(content, {opacity: reveal(t, helps ? 0.35 : 0, helps ? 0.8 : 0.45)});
+      }
+    }
+
+    return {body, caption: chapter.caption, title: chapter.title, step: chapterIndex + 1};
+  },
+};
+</script>
+  <script>const animationIcons = {"Terminal":[["path",{"d":"M12 19h8"}],["path",{"d":"m4 17 6-6-6-6"}]],"Server":[["rect",{"width":"20","height":"8","x":"2","y":"2","rx":"2","ry":"2"}],["rect",{"width":"20","height":"8","x":"2","y":"14","rx":"2","ry":"2"}],["line",{"x1":"6","x2":"6.01","y1":"6","y2":"6"}],["line",{"x1":"6","x2":"6.01","y1":"18","y2":"18"}]],"FileText":[["path",{"d":"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"}],["path",{"d":"M14 2v5a1 1 0 0 0 1 1h5"}],["path",{"d":"M10 9H8"}],["path",{"d":"M16 13H8"}],["path",{"d":"M16 17H8"}]],"Layers":[["path",{"d":"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"}],["path",{"d":"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"}],["path",{"d":"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"}]],"ScrollText":[["path",{"d":"M15 12h-5"}],["path",{"d":"M15 8h-5"}],["path",{"d":"M19 17V5a2 2 0 0 0-2-2H4"}],["path",{"d":"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"}]],"ShieldCheck":[["path",{"d":"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}],["path",{"d":"m9 12 2 2 4-4"}]],"Check":[["path",{"d":"M20 6 9 17l-5-5"}]],"LockKeyhole":[["circle",{"cx":"12","cy":"16","r":"1"}],["rect",{"x":"3","y":"10","width":"18","height":"12","rx":"2"}],["path",{"d":"M7 10V7a5 5 0 0 1 10 0v3"}]],"Cpu":[["path",{"d":"M12 20v2"}],["path",{"d":"M12 2v2"}],["path",{"d":"M17 20v2"}],["path",{"d":"M17 2v2"}],["path",{"d":"M2 12h2"}],["path",{"d":"M2 17h2"}],["path",{"d":"M2 7h2"}],["path",{"d":"M20 12h2"}],["path",{"d":"M20 17h2"}],["path",{"d":"M20 7h2"}],["path",{"d":"M7 20v2"}],["path",{"d":"M7 2v2"}],["rect",{"x":"4","y":"4","width":"16","height":"16","rx":"2"}],["rect",{"x":"8","y":"8","width":"8","height":"8","rx":"1"}]],"HardDrive":[["path",{"d":"M10 16h.01"}],["path",{"d":"M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"}],["path",{"d":"M21.946 12.013H2.054"}],["path",{"d":"M6 16h.01"}]],"Clock3":[["circle",{"cx":"12","cy":"12","r":"10"}],["path",{"d":"M12 6v6h4"}]],"CirclePause":[["circle",{"cx":"12","cy":"12","r":"10"}],["line",{"x1":"10","x2":"10","y1":"15","y2":"9"}],["line",{"x1":"14","x2":"14","y1":"15","y2":"9"}]]};</script>
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const scene=globalThis.animationScene, runtime=globalThis.animationRuntime;
+    const stage=document.getElementById('stage'), play=document.getElementById('play'), replay=document.getElementById('replay');
+    const seek=document.getElementById('seek'), theme=document.getElementById('theme'), time=document.getElementById('time'), status=document.getElementById('status');
+    const clock={time:0}, reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    let tween=null, raf=null, playing=false;
+    document.title=scene.meta.title; seek.max=scene.meta.duration;
+    function draw(){
+      const width=Math.max(260,stage.clientWidth), height=width<560?Math.max(700,width*1.9):width*9/16;
+      const frame=runtime.render(scene,{time:clock.time,width,height,theme:theme.value,icons:animationIcons});
+      stage.innerHTML=frame.svg; seek.value=clock.time;
+      time.textContent=`${clock.time.toFixed(1)} / ${scene.meta.duration}s`;
+    }
+    function pause(){if(tween)tween.kill();tween=null;if(raf!==null)cancelAnimationFrame(raf);raf=null;playing=false;play.textContent='Play';}
+    function start(){
+      if(reduced.matches)return;
+      pause();if(clock.time>=scene.meta.duration)clock.time=0;
+      playing=true;play.textContent='Pause';
+      if(window.gsap){tween=gsap.to(clock,{time:scene.meta.duration,duration:scene.meta.duration-clock.time,ease:'none',onUpdate:draw,onComplete:pause});}
+      else{const from=clock.time, started=performance.now();function tick(now){clock.time=Math.min(scene.meta.duration,from+(now-started)/1000);draw();if(clock.time<scene.meta.duration)raf=requestAnimationFrame(tick);else pause();}raf=requestAnimationFrame(tick);}
+    }
+    play.onclick=()=>playing?pause():start();
+    replay.onclick=()=>{pause();clock.time=0;draw();start();};
+    seek.oninput=()=>{pause();clock.time=Number(seek.value);draw();};
+    theme.onchange=()=>{document.body.dataset.theme=theme.value;draw();};
+    function applyMotion(){pause();play.disabled=reduced.matches;status.textContent=reduced.matches?'Reduced motion: use the time slider to explore each step.':'Play or scrub to explore the process.';}
+    reduced.addEventListener('change',applyMotion);new ResizeObserver(draw).observe(stage);
+    applyMotion();draw();
+  });
+  </script>
+  <!-- Lucide icon license
+ISC License
+
+Copyright (c) 2026 Lucide Icons and Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+—-
+
+The following Lucide icons are derived from the Feather project:
+
+airplay, alert-circle, alert-octagon, alert-triangle, aperture, arrow-down-circle, arrow-down-left, arrow-down-right, arrow-down, arrow-left-circle, arrow-left, arrow-right-circle, arrow-right, arrow-up-circle, arrow-up-left, arrow-up-right, arrow-up, at-sign, calendar, cast, check, chevron-down, chevron-left, chevron-right, chevron-up, chevrons-down, chevrons-left, chevrons-right, chevrons-up, circle, clipboard, clock, code, columns, command, compass, corner-down-left, corner-down-right, corner-left-down, corner-left-up, corner-right-down, corner-right-up, corner-up-left, corner-up-right, crosshair, database, divide-circle, divide-square, dollar-sign, download, external-link, feather, frown, hash, headphones, help-circle, info, italic, key, layout, life-buoy, link-2, link, loader, lock, log-in, log-out, maximize, meh, minimize, minimize-2, minus-circle, minus-square, minus, monitor, moon, more-horizontal, more-vertical, move, music, navigation-2, navigation, octagon, pause-circle, percent, plus-circle, plus-square, plus, power, radio, rss, search, server, share, shopping-bag, sidebar, smartphone, smile, square, table-2, tablet, target, terminal, trash-2, trash, triangle, tv, type, upload, x-circle, x-octagon, x-square, x, zoom-in, zoom-out
+
+The MIT License (MIT) (for the icons listed above)
+
+Copyright (c) 2013-present Cole Bemis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+</body>
+</html>

@@ -1,0 +1,359 @@
+.wt-pressure {
+  --wtp-worker: #286957;
+  --wtp-worker-bg: #e4f2ec;
+  --wtp-application: #a14b1f;
+  --wtp-application-bg: #f9e9d9;
+  --wtp-request: #286780;
+  --wtp-request-bg: #e2f0f6;
+
+  margin: 2rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+:root[data-theme="dark"] .wt-pressure {
+  --wtp-worker: #a1d3c5;
+  --wtp-worker-bg: #16332c;
+  --wtp-application: #eda66b;
+  --wtp-application-bg: #38271b;
+  --wtp-request: #9dd2e3;
+  --wtp-request-bg: #172f3c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .wt-pressure {
+    --wtp-worker: #a1d3c5;
+    --wtp-worker-bg: #16332c;
+    --wtp-application: #eda66b;
+    --wtp-application-bg: #38271b;
+    --wtp-request: #9dd2e3;
+    --wtp-request-bg: #172f3c;
+  }
+}
+
+.wt-pressure *,
+.wt-pressure *::before,
+.wt-pressure *::after {
+  box-sizing: border-box;
+}
+
+.prose .wt-pressure p,
+.prose .wt-pressure h3,
+.prose .wt-pressure h4 {
+  margin: 0;
+}
+
+.wt-pressure__header,
+.wt-pressure__lane-head,
+.wt-pressure__thresholds {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.prose .wt-pressure__eyebrow {
+  margin-bottom: 0.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.prose .wt-pressure h3 {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.wt-pressure__value {
+  color: var(--wtp-application);
+  font-size: 2.25rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.wt-pressure__label {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.wt-pressure__hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.wt-pressure__range {
+  margin-top: 0.35rem;
+}
+
+.wt-pressure__range input {
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.wt-pressure__range input::-webkit-slider-runnable-track {
+  height: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: linear-gradient(to right, var(--wtp-application) var(--wtp-percent), var(--code-background) var(--wtp-percent));
+}
+
+.wt-pressure__range input::-moz-range-track {
+  height: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: linear-gradient(to right, var(--wtp-application) var(--wtp-percent), var(--code-background) var(--wtp-percent));
+}
+
+.wt-pressure__range input::-webkit-slider-thumb {
+  width: 1.25rem;
+  height: 1.75rem;
+  margin-top: -0.55rem;
+  appearance: none;
+  border: 2px solid var(--text);
+  border-radius: 0.3rem;
+  background: var(--surface);
+  box-shadow: 0 1px 4px #0003;
+}
+
+.wt-pressure__range input::-moz-range-thumb {
+  width: 1.05rem;
+  height: 1.55rem;
+  border: 2px solid var(--text);
+  border-radius: 0.3rem;
+  background: var(--surface);
+  box-shadow: 0 1px 4px #0003;
+}
+
+.wt-pressure__ticks {
+  position: relative;
+  height: 1.4rem;
+  margin: 0 0.625rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.wt-pressure__ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.wt-pressure__ticks span::before {
+  position: absolute;
+  top: -1.8rem;
+  left: 50%;
+  width: 2px;
+  height: 0.9rem;
+  background: currentColor;
+  content: "";
+  pointer-events: none;
+}
+
+.wt-pressure__ticks span:first-child { color: var(--wtp-worker); }
+.wt-pressure__ticks span:nth-child(2) { color: var(--wtp-application); }
+.wt-pressure__ticks .wt-pressure__maximum { right: -0.625rem; transform: none; }
+.wt-pressure__ticks .wt-pressure__maximum::before { display: none; }
+
+.wt-pressure__thresholds {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.35rem 1.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.wt-pressure__key {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+}
+
+.wt-pressure__key--worker { background: var(--wtp-worker); }
+.wt-pressure__key--application { background: var(--wtp-application); }
+
+.wt-pressure__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.wt-pressure button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.wt-pressure button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--code-background);
+}
+
+.wt-pressure button:disabled,
+.wt-pressure input:disabled { cursor: default; opacity: 0.6; }
+
+.wt-pressure__status {
+  min-height: 7rem;
+  margin: 1.25rem 0 1rem;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.prose .wt-pressure__state {
+  margin-bottom: 0.3rem;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.wt-pressure__diagram {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) 4rem minmax(0, 0.8fr);
+  grid-template-areas: "workers worker-route disk" "application application-route disk";
+  gap: 1rem 0;
+}
+
+.wt-pressure__lane,
+.wt-pressure__disk {
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--background);
+}
+
+.wt-pressure__lane--workers { grid-area: workers; }
+.wt-pressure__lane--application { grid-area: application; border-color: var(--wtp-request); }
+.wt-pressure__disk { grid-area: disk; display: flex; flex-direction: column; justify-content: center; gap: 0.7rem; }
+
+.prose .wt-pressure h4 {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.wt-pressure__count { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+.wt-pressure__threads { display: flex; gap: 0.5rem; margin: 0.85rem 0; }
+.wt-pressure__thread { display: block; width: 2.15rem; height: 2.15rem; padding: 0.35rem; border: 1px solid currentColor; border-radius: 0.35rem; color: var(--muted); }
+.wt-pressure__thread svg { display: block; width: 100%; height: 100%; }
+.wt-pressure__lane--application .wt-pressure__thread { color: var(--wtp-request); background: var(--wtp-request-bg); }
+.wt-pressure__activity { font-size: 0.85rem; font-weight: 650; }
+.prose .wt-pressure__detail { margin-top: 0.3rem; color: var(--muted); font-size: 0.75rem; }
+.wt-pressure__disk-icon { width: 2.6rem; color: var(--muted); }
+.wt-pressure__disk h4 { font-family: var(--font-mono); }
+.wt-pressure__disk p { font-size: 0.8rem; }
+.wt-pressure__file-lines { display: flex; flex-direction: column; gap: 0.3rem; }
+.wt-pressure__file-lines i { display: block; width: 100%; height: 2px; background: var(--border); }
+.wt-pressure__file-lines i:last-child { width: 65%; }
+
+.wt-pressure__route {
+  --wtp-route: var(--border);
+  --wtp-flow: wtp-flow-x;
+  position: relative;
+  align-self: center;
+  height: 2px;
+  color: var(--wtp-route);
+  background: currentColor;
+}
+
+.wt-pressure__route--workers { grid-area: worker-route; }
+.wt-pressure__route--application { grid-area: application-route; }
+.wt-pressure__route::after { position: absolute; top: -4px; right: 1px; width: 9px; height: 9px; border-top: 2px solid currentColor; border-right: 2px solid currentColor; transform: rotate(45deg); content: ""; }
+.wt-pressure__packet { display: none; position: absolute; top: -5px; left: 0; width: 9px; height: 12px; border: 1px solid currentColor; border-radius: 2px; background: var(--surface); animation: var(--wtp-flow) 2.4s linear infinite; }
+.wt-pressure__packet--second { animation-delay: -1.2s; }
+
+.wt-pressure[data-mode="background"] .wt-pressure__lane--workers,
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--workers { border-color: var(--wtp-worker); }
+.wt-pressure[data-mode="background"] .wt-pressure__lane--workers .wt-pressure__thread,
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--workers .wt-pressure__thread { color: var(--wtp-worker); background: var(--wtp-worker-bg); animation: wtp-work 2.4s ease-in-out infinite; animation-delay: calc(var(--wtp-order) * -0.3s); }
+.wt-pressure[data-mode="background"] .wt-pressure__route--workers,
+.wt-pressure[data-mode="foreground"] .wt-pressure__route--workers { --wtp-route: var(--wtp-worker); }
+.wt-pressure[data-mode="background"] .wt-pressure__route--workers .wt-pressure__packet,
+.wt-pressure[data-mode="foreground"] .wt-pressure__route--workers .wt-pressure__packet,
+.wt-pressure[data-mode="foreground"] .wt-pressure__route--application .wt-pressure__packet { display: block; }
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--application { border-color: var(--wtp-application); }
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--application .wt-pressure__thread { color: var(--wtp-application); background: var(--wtp-application-bg); animation: wtp-work 2.4s ease-in-out infinite; animation-delay: calc(var(--wtp-order) * -0.3s); }
+.wt-pressure[data-mode="foreground"] .wt-pressure__route--application { --wtp-route: var(--wtp-application); }
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--application .wt-pressure__activity,
+.wt-pressure[data-mode="foreground"] .wt-pressure__lane--application .wt-pressure__detail { color: var(--wtp-application); }
+.wt-pressure[data-mode="background"] .wt-pressure__status { border-color: var(--wtp-worker); }
+.wt-pressure[data-mode="foreground"] .wt-pressure__status { border-color: var(--wtp-application); }
+.wt-pressure[data-mode="background"] .wt-pressure__disk,
+.wt-pressure[data-mode="foreground"] .wt-pressure__disk { border-color: var(--wtp-worker); }
+.wt-pressure[data-mode="background"] .wt-pressure__disk-icon,
+.wt-pressure[data-mode="foreground"] .wt-pressure__disk-icon { color: var(--wtp-worker); }
+.wt-pressure[data-mode="background"] .wt-pressure__file-lines i,
+.wt-pressure[data-mode="foreground"] .wt-pressure__file-lines i { background: var(--wtp-worker); }
+
+.wt-pressure__footer { margin-top: 1.2rem; }
+.prose .wt-pressure__footer p { margin-top: 0.75rem; color: var(--muted); font-size: 0.75rem; }
+.wt-pressure[data-motion="paused"] .wt-pressure__thread,
+.wt-pressure[data-motion="paused"] .wt-pressure__packet { animation-play-state: paused !important; }
+
+@keyframes wtp-flow-x {
+  0% { left: 0; opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { left: calc(100% - 9px); opacity: 0; }
+}
+
+@keyframes wtp-flow-y {
+  0% { top: 0; opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { top: calc(100% - 12px); opacity: 0; }
+}
+
+@keyframes wtp-work {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@media (max-width: 540px) {
+  .wt-pressure { padding: 0.9rem; }
+  .wt-pressure__header { align-items: flex-start; }
+  .prose .wt-pressure h3 { font-size: 1.1rem; }
+  .wt-pressure__value { font-size: 1.9rem; }
+  .wt-pressure__status { min-height: 9rem; }
+  .wt-pressure__diagram { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "workers application" "worker-route application-route" "disk disk"; gap: 0 0.65rem; }
+  .wt-pressure__lane { padding: 0.65rem; }
+  .wt-pressure__lane-head { align-items: flex-start; flex-direction: column; gap: 0.25rem; min-height: 3.2rem; }
+  .wt-pressure__threads { flex-wrap: wrap; gap: 0.35rem; min-height: 4.25rem; align-content: flex-start; }
+  .wt-pressure__thread { width: 1.65rem; height: 1.65rem; padding: 0.23rem; }
+  .prose .wt-pressure h4 { font-size: 0.8rem; }
+  .wt-pressure__activity { font-size: 0.8rem; }
+  .prose .wt-pressure__detail { font-size: 0.7rem; }
+  .wt-pressure__route { --wtp-flow: wtp-flow-y; width: 2px; height: 2.75rem; justify-self: center; }
+  .wt-pressure__route::after { top: auto; right: -3.5px; bottom: 1px; transform: rotate(135deg); }
+  .wt-pressure__packet { top: 0; left: -3.5px; }
+  .wt-pressure__disk { padding: 0.85rem; gap: 0.4rem; }
+  .wt-pressure__disk-icon { width: 2rem; }
+  .wt-pressure__file-lines { max-width: 7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-pressure__thread,
+  .wt-pressure__packet { animation: none !important; }
+}

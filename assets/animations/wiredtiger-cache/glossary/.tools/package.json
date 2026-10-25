@@ -1,0 +1,7 @@
+{
+  "name": "illustrated-process-animation-tools",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "dependencies": { "lucide": "1.8.0", "sharp": "0.35.5" }
+}
