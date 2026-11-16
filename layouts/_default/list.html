@@ -9,10 +9,5 @@
       </div>
     {{ end }}
 
-    {{ if eq .Section "writing" }}
-      {{ $posts := where .RegularPages "Draft" false }}
-      {{ $posts = $posts.ByDate.Reverse }}
-      {{ partial "post-list.html" (dict "pages" $posts "groupByYear" true) }}
-    {{ end }}
   </article>
 {{ end }}
