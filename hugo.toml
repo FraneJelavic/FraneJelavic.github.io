@@ -5,9 +5,6 @@ timeZone = "Europe/Zagreb"
 enableRobotsTXT = true
 summaryLength = 30
 
-[pagination]
-  pagerSize = 10
-
 [languages]
   [languages.en]
     contentDir = "content"
@@ -66,6 +63,11 @@ summaryLength = 30
   name = "Writing"
   pageRef = "/writing"
   weight = 20
+
+[[menus.main]]
+  name = "Publications"
+  pageRef = "/publications"
+  weight = 25
 
 [[menus.main]]
   name = "About"

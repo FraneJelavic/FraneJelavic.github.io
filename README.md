@@ -4,7 +4,7 @@ Source for [franejelavic.github.io](https://franejelavic.github.io/), a personal
 
 ## What is included
 
-- A home page, writing archive, About page, and Privacy page
+- A home page, writing archive, Publications page, About page, and Privacy page
 - Markdown articles with syntax highlighting, tables, images, and optional Mermaid diagrams
 - RSS feeds, sitemap, SEO metadata, and GoatCounter analytics
 - Automatic deployment to GitHub Pages when `main` is updated
