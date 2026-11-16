@@ -332,7 +332,7 @@ assert_goatcounter() {
 
   while IFS= read -r -d '' html_file; do
     file_expected_count="${expected_count}"
-    if [[ "${expected_count}" -eq 1 ]] && grep -Fq 'http-equiv=refresh' "${html_file}"; then
+    if [[ "${expected_count}" -eq 1 ]] && grep -Eiq 'http-equiv="?refresh"?' "${html_file}"; then
       file_expected_count=0
     fi
 
