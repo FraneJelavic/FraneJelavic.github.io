@@ -163,14 +163,16 @@ assert_core_artifacts() {
   done
 }
 
-assert_about_content_and_navigation() {
+assert_home_content_and_navigation() {
   local scenario="$1"
   local production_dir="$2"
-  local about_page="about/index.html"
+  local home_page="index.html"
   local publications_page="publications/index.html"
+  local about_alias_page="about/index.html"
   local elsewhere_page="elsewhere/index.html"
-  local navigation='<nav class=primary-nav aria-label=Primary><ul><li><a href=/ aria-current=page>Home</a></li><li><a href=/writing/>Writing</a></li><li><a href=/publications/>Publications</a></li><li><a href=/about/>About</a></li></ul></nav>'
-  local biography='I’m Frane Jelavić, a Principal Engineer at Infobip. I design and operate database-heavy distributed systems, with a focus on high availability, change data capture, reliability, and performance. I work with PostgreSQL, MongoDB, Kafka, Debezium, Go, and Java.'
+  local navigation='<nav class=primary-nav aria-label=Primary><ul><li><a href=/ aria-current=page>Home</a></li><li><a href=/writing/>Writing</a></li><li><a href=/publications/>Publications</a></li></ul></nav>'
+  local introduction='Hi, I’m Frane Jelavić, a Principal Engineer at Infobip.'
+  local work_context='Much of my work starts when production systems stop behaving as expected: replication failures, slow queries, lagging data pipelines, unreliable failover, or database migrations that must remain online. I trace those problems through the database, application, and infrastructure to understand the mechanism.'
   local talk_url='https://www.youtube.com/watch?v=E7xBu7ZdP28&amp;t=19085s'
   local wiredtiger_url='https://shiftmag.dev/how-wiredtiger-cache-dirty-pages-and-eviction-can-throttle-your-mongodb-writes-13357/'
   local mongodb_url='https://shiftmag.dev/mongodb-one-write-two-logs-12267/'
@@ -178,18 +180,27 @@ assert_about_content_and_navigation() {
   local automation_url='https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp'
   local migration_url='https://shiftmag.dev/database-migration-developers-open-heart-surgery-1926/'
 
-  assert_contains "${scenario}" "${production_dir}" "index.html" "${navigation}" "exact Home, Writing, Publications, About primary navigation"
-  assert_not_contains "${scenario}" "${production_dir}" "index.html" "href=/elsewhere/" "legacy Elsewhere destination must not remain in primary navigation"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" "${navigation}" "exact Home, Writing, Publications primary navigation"
+  assert_not_contains "${scenario}" "${production_dir}" "${home_page}" "href=/about/" "About must not remain in primary navigation"
+  assert_not_contains "${scenario}" "${production_dir}" "${home_page}" "href=/elsewhere/" "legacy Elsewhere destination must not remain in primary navigation"
 
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" "${biography}" "approved biography"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'href=https://github.com/FraneJelavic rel=me>GitHub</a>' "GitHub profile link"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'href=https://www.linkedin.com/in/frane-jelavi%C4%87-92551660/ rel=me>LinkedIn</a>' "LinkedIn profile link"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" '<h1>About</h1>' "About H1"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" "${wiredtiger_url}" "latest ShiftMag article destination"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'How WiredTiger cache dirty pages and eviction can throttle your MongoDB writes' "latest ShiftMag article title"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" "href=/publications/" "link to selected publications"
-  assert_contains "${scenario}" "${production_dir}" "${about_page}" 'Publications</a>' "Publications link text"
-  assert_count "${scenario}" "${production_dir}" "${about_page}" "${wiredtiger_url}" 1 "one featured ShiftMag article destination"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" "${introduction}" "home profile introduction"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" "${work_context}" "home profile context"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'I design and operate database-heavy distributed systems, focusing on high availability, change data capture, reliability, and performance.' "home profile focus"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'href=https://github.com/FraneJelavic rel=me>GitHub</a>' "GitHub profile link"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'href=https://www.linkedin.com/in/frane-jelavi%C4%87-92551660/ rel=me>LinkedIn</a>' "LinkedIn profile link"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'Recent publications' "recent publications heading"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'All publications' "full publications link"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" "${wiredtiger_url}" "latest ShiftMag article destination"
+  assert_contains "${scenario}" "${production_dir}" "${home_page}" 'How WiredTiger cache dirty pages and eviction can throttle your MongoDB writes' "latest ShiftMag article title"
+  assert_count "${scenario}" "${production_dir}" "${home_page}" "${wiredtiger_url}" 1 "one featured ShiftMag article destination"
+
+  assert_contains "${scenario}" "${production_dir}" "${about_alias_page}" 'rel=canonical href=https://franejelavic.github.io/' "About URL canonical target"
+  assert_contains "${scenario}" "${production_dir}" "${about_alias_page}" 'http-equiv=refresh content="0; url=https://franejelavic.github.io/"' "About URL redirect target"
+  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'rel=canonical href=https://franejelavic.github.io/' "legacy URL canonical target"
+  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'http-equiv=refresh content="0; url=https://franejelavic.github.io/"' "legacy URL redirect target"
+  assert_not_contains "${scenario}" "${production_dir}" "${about_alias_page}" "${wiredtiger_url}" "About alias must not duplicate home content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${wiredtiger_url}" "legacy alias must not duplicate home content"
 
   assert_contains "${scenario}" "${production_dir}" "${publications_page}" '<h1>Publications</h1>' "Publications H1"
   assert_contains "${scenario}" "${production_dir}" "${publications_page}" '<h2 id=articles>Articles' "Articles section"
@@ -219,14 +230,12 @@ assert_about_content_and_navigation() {
   assert_count "${scenario}" "${production_dir}" "${publications_page}" "${automation_url}" 1 "one canonical developer automation destination"
   assert_count "${scenario}" "${production_dir}" "${publications_page}" "${migration_url}" 1 "one canonical database migration destination"
 
-  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'rel=canonical href=https://franejelavic.github.io/about/' "legacy URL canonical target"
-  assert_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'http-equiv=refresh content="0; url=https://franejelavic.github.io/about/"' "legacy URL redirect target"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'Understanding the Database' "legacy URL must not duplicate curated content"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${wiredtiger_url}" "legacy URL must not duplicate curated content"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${mongodb_url}" "legacy URL must not duplicate MongoDB article content"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${failover_url}" "legacy URL must not duplicate database failover article content"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${automation_url}" "legacy URL must not duplicate article content"
-  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${migration_url}" "legacy URL must not duplicate article content"
+  assert_not_contains "${scenario}" "${production_dir}" "${about_alias_page}" 'Understanding the Database' "About alias must not duplicate publication content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" 'Understanding the Database' "legacy alias must not duplicate publication content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${mongodb_url}" "legacy alias must not duplicate MongoDB article content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${failover_url}" "legacy alias must not duplicate database failover article content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${automation_url}" "legacy alias must not duplicate article content"
+  assert_not_contains "${scenario}" "${production_dir}" "${elsewhere_page}" "${migration_url}" "legacy alias must not duplicate article content"
 }
 
 assert_canonical_urls() {
@@ -503,7 +512,7 @@ hugo \
   || fail "real development: Hugo build failed"
 
 assert_core_artifacts "real production" "${production_output}"
-assert_about_content_and_navigation "real production" "${production_output}"
+assert_home_content_and_navigation "real production" "${production_output}"
 assert_canonical_urls "real production" "${production_output}"
 assert_no_private_content "real production" "${production_output}"
 assert_actual_writing_state "real production" "${production_output}"

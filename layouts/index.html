@@ -17,5 +17,20 @@
         {{ partial "post-list.html" (dict "pages" (first 5 $posts) "groupByYear" false) }}
       </section>
     {{ end }}
+
+    {{ with site.GetPage "/publications" }}
+      {{ $publicationPage := . }}
+      {{ with .Summary }}
+        <section class="recent-publications" aria-labelledby="recent-publications-title">
+          <div class="section-heading">
+            <h2 id="recent-publications-title">Recent publications</h2>
+            <a href="{{ $publicationPage.RelPermalink }}">All publications</a>
+          </div>
+          <div class="prose">
+            {{ . }}
+          </div>
+        </section>
+      {{ end }}
+    {{ end }}
   </article>
 {{ end }}

@@ -68,8 +68,3 @@ summaryLength = 30
   name = "Publications"
   pageRef = "/publications"
   weight = 25
-
-[[menus.main]]
-  name = "About"
-  pageRef = "/about"
-  weight = 30

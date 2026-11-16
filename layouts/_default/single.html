@@ -6,10 +6,5 @@
     <div class="prose">
       {{ .Content }}
     </div>
-    {{ if .Params.showProfileLinks }}
-      <nav class="profile-links" aria-label="Profiles">
-        {{ partial "social-links.html" . }}
-      </nav>
-    {{ end }}
   </article>
 {{ end }}

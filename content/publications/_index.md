@@ -18,6 +18,7 @@ Selected articles and talks published elsewhere.
 - [How to Survive Database Failover – Debezium and PostgreSQL in Production](https://shiftmag.dev/how-to-survive-database-failover-debezium-and-postgresql-in-production-11676/)\
   ShiftMag · 2026\
   Keeping Debezium streaming safely through PostgreSQL 16 failover by aligning logical replication slots with Kafka Connect offsets.
+<!--more-->
 
 - [How to automate developer support with Claude and MCP](https://www.infobip.com/developers/blog/ai-developer-support-automation-claude-mcp)\
   Infobip Developers Hub · 2026\
